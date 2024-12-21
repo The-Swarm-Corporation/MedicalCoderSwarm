@@ -49,11 +49,6 @@ flowchart TB
     I --> MC[Medical Coder]
     MC --> S[Synthesizer]
     
-    style CMO fill:#f9f,stroke:#333,stroke-width:2px
-    style V fill:#bbf,stroke:#333,stroke-width:2px
-    style I fill:#bbf,stroke:#333,stroke-width:2px
-    style MC fill:#bfb,stroke:#333,stroke-width:2px
-    style S fill:#fbb,stroke:#333,stroke-width:2px
 ```
 
 ## Features
