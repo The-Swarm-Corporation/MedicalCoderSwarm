@@ -1,67 +1,178 @@
-[![Multi-Modality](agorabanner.png)](https://discord.com/servers/agora-999382051935506503)
+# Medical Diagnosis Swarm Architecture
 
-# Python Package Template
 
 [![Join our Discord](https://img.shields.io/badge/Discord-Join%20our%20server-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/agora-999382051935506503) [![Subscribe on YouTube](https://img.shields.io/badge/YouTube-Subscribe-red?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@kyegomez3242) [![Connect on LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/kye-g-38759a207/) [![Follow on X.com](https://img.shields.io/badge/X.com-Follow-1DA1F2?style=for-the-badge&logo=x&logoColor=white)](https://x.com/kyegomezb)
 
-A easy, reliable, fluid template for python packages complete with docs, testing suites, readme's, github workflows, linting and much much more
+A production-grade multi-agent system for comprehensive medical diagnosis and coding using specialized AI agents.
 
+## Architecture Overview
+
+```mermaid
+flowchart TB
+    CMO[Chief Medical Officer] --> V[Virologist]
+    V --> I[Internist]
+    I --> MC[Medical Coder]
+    MC --> S[Synthesizer]
+    
+    style CMO fill:#f9f,stroke:#333,stroke-width:2px
+    style V fill:#bbf,stroke:#333,stroke-width:2px
+    style I fill:#bbf,stroke:#333,stroke-width:2px
+    style MC fill:#bfb,stroke:#333,stroke-width:2px
+    style S fill:#fbb,stroke:#333,stroke-width:2px
+```
+
+## Features
+
+- **Specialized Agent Roles**: Each agent has specific medical expertise and responsibilities
+- **Structured Diagnostic Flow**: Organized pipeline from initial assessment to final synthesis
+- **ICD-10 Coding Integration**: Comprehensive medical coding at each diagnostic stage
+- **Automated Report Generation**: Standardized medical and coding reports
+- **Evidence-Based Decision Making**: Multi-stage verification and synthesis process
+
+## Agent Responsibilities
+
+```mermaid
+mindmap
+  root((Medical Swarm))
+    Chief Medical Officer
+      Initial Assessment
+      Coordinate Specialists
+      Treatment Plans
+      Lab Range Analysis
+    Virologist
+      Viral Analysis
+      Disease Progression
+      Risk Assessment
+    Internist
+      System Review
+      Vitals Analysis
+      Comorbidity Evaluation
+    Medical Coder
+      ICD-10 Assignment
+      Coding Compliance
+      Documentation Review
+    Synthesizer
+      Integration
+      Reconciliation
+      Final Assessment
+```
 
 ## Installation
 
-You can install the package using pip
-
 ```bash
-pip install -e .
+pip install swarms
 ```
 
-# Usage
+## Usage
+
 ```python
-print("hello world")
+from swarms import Agent, AgentRearrange
+from datetime import datetime
 
+# Initialize agents
+chief_medical_officer = Agent(
+    agent_name="Chief Medical Officer",
+    system_prompt="""...""",
+    model_name="gpt-4o",
+    max_loops=1
+)
+
+# Create agent list and flow
+agents = [chief_medical_officer, virologist, internist, medical_coder, synthesizer]
+flow = "Chief Medical Officer -> Virologist -> Internist -> Medical Coder -> Synthesizer"
+
+# Initialize swarm system
+diagnosis_system = AgentRearrange(
+    name="Medical-coding-diagnosis-swarm",
+    description="Comprehensive medical diagnosis and coding system",
+    agents=agents,
+    flow=flow,
+    max_loops=1,
+    output_type="all"
+)
+
+# Process patient case
+patient_case = """
+Patient: 45-year-old White Male
+Lab Results:
+- egfr: 59 ml/min/1.73
+- non african-american
+"""
+
+diagnosis = diagnosis_system.run(patient_case)
 ```
 
+## Diagnostic Flow Process
 
-
-### Code Quality 🧹
-
-- `make style` to format the code
-- `make check_code_quality` to check code quality (PEP8 basically)
-- `black .`
-- `ruff . --fix`
-
-### Tests 🧪
-
-[`pytests`](https://docs.pytest.org/en/7.1.x/) is used to run our tests.
-
-### Publish on PyPi 🚀
-
-**Important**: Before publishing, edit `__version__` in [src/__init__](/src/__init__.py) to match the wanted new version.
-
-```
-poetry build
-poetry publish
+```mermaid
+sequenceDiagram
+    participant P as Patient Case
+    participant CMO as Chief Medical Officer
+    participant V as Virologist
+    participant I as Internist
+    participant MC as Medical Coder
+    participant S as Synthesizer
+    
+    P->>CMO: Initial Data
+    CMO->>V: Preliminary Assessment
+    V->>I: Viral Analysis
+    I->>MC: Comprehensive Review
+    MC->>S: Coded Diagnosis
+    S->>P: Final Report
 ```
 
-### CI/CD 🤖
+## Output Format
 
-We use [GitHub actions](https://github.com/features/actions) to automatically run tests and check code quality when a new PR is done on `main`.
+The system generates two main types of reports:
 
-On any pull request, we will check the code quality and tests.
+1. **Medical Diagnosis Report**: Clinical findings and recommendations
+2. **Coding Report**: Structured ICD-10 codes and documentation
 
-When a new release is created, we will try to push the new code to PyPi. We use [`twine`](https://twine.readthedocs.io/en/stable/) to make our life easier. 
+Example Report Structure:
+```markdown
+# Medical Diagnosis and Coding Report
+Generated: [Timestamp]
 
-The **correct steps** to create a new realease are the following:
-- edit `__version__` in [src/__init__](/src/__init__.py) to match the wanted new version.
-- create a new [`tag`](https://git-scm.com/docs/git-tag) with the release name, e.g. `git tag v0.0.1 && git push origin v0.0.1` or from the GitHub UI.
-- create a new release from GitHub UI
+## Clinical Summary
+[Diagnosis Details]
 
-The CI will run when you create the new release.
+## Coding Summary
+### Primary Diagnosis Codes
+[ICD-10 Codes]
 
-# Docs
-We use MK docs. This repo comes with the zeta docs. All the docs configurations are already here along with the readthedocs configs.
+### Secondary Diagnosis Codes
+[Additional Codes]
 
+## Recommendations
+[Next Steps]
+```
 
+## Lab Range Analysis
 
-# License
-MIT
+The system includes specialized functionality for analyzing lab results against diagnostic criteria:
+
+- Automated range checking for common tests (e.g., eGFR)
+- Diagnosis-specific range validation
+- Multi-factor analysis for complex diagnoses
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+
+## Acknowledgments
+
+- Built with the Swarms framework
+- Utilizes GPT-4 for advanced medical reasoning
+- ICD-10 coding standards compliance
+
+## Contact
+
+For questions and support, please open an issue in the repository.
