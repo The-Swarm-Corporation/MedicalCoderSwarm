@@ -5,6 +5,41 @@
 
 A production-grade multi-agent system for comprehensive medical diagnosis and coding using specialized AI agents.
 
+
+## Installation
+
+```bash
+pip install mcs
+```
+
+## Usage
+
+```python
+
+from mcs.main import MedicalCoderSwarm
+import json
+
+if __name__ == "__main__":
+  # Example patient case
+  patient_case = """
+  Patient: 45-year-old White Male
+  Location: New York, NY
+
+  Lab Results:
+  - egfr 
+  - 59 ml / min / 1.73
+  - non african-american
+  
+  """
+  
+  swarm = MedicalCoderSwarm(patient_id="Patient-001", max_loops=1, patient_documentation="")
+  
+  swarm.run(task=patient_case)
+  
+  print(json.dumps(swarm.to_dict()))
+```
+
+
 ## Architecture Overview
 
 ```mermaid
@@ -55,51 +90,6 @@ mindmap
       Integration
       Reconciliation
       Final Assessment
-```
-
-## Installation
-
-```bash
-pip install swarms
-```
-
-## Usage
-
-```python
-from swarms import Agent, AgentRearrange
-from datetime import datetime
-
-# Initialize agents
-chief_medical_officer = Agent(
-    agent_name="Chief Medical Officer",
-    system_prompt="""...""",
-    model_name="gpt-4o",
-    max_loops=1
-)
-
-# Create agent list and flow
-agents = [chief_medical_officer, virologist, internist, medical_coder, synthesizer]
-flow = "Chief Medical Officer -> Virologist -> Internist -> Medical Coder -> Synthesizer"
-
-# Initialize swarm system
-diagnosis_system = AgentRearrange(
-    name="Medical-coding-diagnosis-swarm",
-    description="Comprehensive medical diagnosis and coding system",
-    agents=agents,
-    flow=flow,
-    max_loops=1,
-    output_type="all"
-)
-
-# Process patient case
-patient_case = """
-Patient: 45-year-old White Male
-Lab Results:
-- egfr: 59 ml/min/1.73
-- non african-american
-"""
-
-diagnosis = diagnosis_system.run(patient_case)
 ```
 
 ## Diagnostic Flow Process

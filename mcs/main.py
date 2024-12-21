@@ -213,6 +213,7 @@ class MedicalCoderSwarm:
         self.output_type = output_type
         self.output_folder_path = output_folder_path
         self.patient_documentation = patient_documentation
+        self.agent_outputs = agent_outputs
         self.agent_outputs = []
         
         self.diagnosis_system = AgentRearrange(
@@ -232,20 +233,22 @@ class MedicalCoderSwarm:
         """
         Run the medical coding and diagnosis system.
         """
-        logger.add("medical_coding_diagnosis_system.log", rotation="10 MB")
+        logger.info("Running the medical coding and diagnosis system.")
         
         try:
+            log_agent_data(self.to_dict())
             case_info = f"Patient Information: {self.patient_id} \n Timestamp: {datetime.now()} \n Patient Documentation {self.patient_documentation} \n Task: {task}" 
             
             output = self.diagnosis_system.run(case_info, img, *args, **kwargs)
-            
             self.agent_outputs.append(output)
+            log_agent_data(self.to_dict())
             
             create_file_in_folder(self.output_folder_path, self.output_file_path, output)
             
             return output
         except Exception as e:
             logger.error(f"An error occurred during the diagnosis process: {e}")
+            log_agent_data(self.to_dict())
             return "An error occurred during the diagnosis process. Please check the logs for more information."
 
     def batched_run(self, tasks: List[str] = None, imgs: List[str] = None, *args, **kwargs):
