@@ -25,6 +25,7 @@ classifiers = [
 python = "^3.10"
 swarms = "*"
 loguru = "*"
+swarms-models = "*"
 
 
 [tool.poetry.group.lint.dependencies]

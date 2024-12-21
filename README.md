@@ -106,32 +106,6 @@ sequenceDiagram
     S->>P: Final Report
 ```
 
-## Output Format
-
-The system generates two main types of reports:
-
-1. **Medical Diagnosis Report**: Clinical findings and recommendations
-2. **Coding Report**: Structured ICD-10 codes and documentation
-
-Example Report Structure:
-```markdown
-# Medical Diagnosis and Coding Report
-Generated: [Timestamp]
-
-## Clinical Summary
-[Diagnosis Details]
-
-## Coding Summary
-### Primary Diagnosis Codes
-[ICD-10 Codes]
-
-### Secondary Diagnosis Codes
-[Additional Codes]
-
-## Recommendations
-[Next Steps]
-```
-
 ## Lab Range Analysis
 
 The system includes specialized functionality for analyzing lab results against diagnostic criteria:

@@ -1,40 +1,44 @@
 """
-- For each diagnosis, pull lab results, 
-- egfr 
-- for each diagnosis, pull lab ranges, 
+- For each diagnosis, pull lab results,
+- egfr
+- for each diagnosis, pull lab ranges,
 - pull ranges for diagnosis
 
 - if the diagnosis is x, then the lab ranges should be a to b
-- train the agents, increase the load of input 
+- train the agents, increase the load of input
 - medical history sent to the agent
 - setup rag for the agents
-- run the first agent -> kidney disease -> don't know the stage -> stage 2 -> lab results -> indicative of stage 3 -> the case got elavated -> 
+- run the first agent -> kidney disease -> don't know the stage -> stage 2 -> lab results -> indicative of stage 3 -> the case got elavated ->
 - how to manage diseases and by looking at correlating lab, docs, diagnoses
-- put docs in rag -> 
+- put docs in rag ->
 - monitoring, evaluation, and treatment
 - can we confirm for every diagnosis -> monitoring, evaluation, and treatment, specialized for these things
 - find diagnosis -> or have diagnosis, -> for each diagnosis are there evidence of those 3 things
-- swarm of those 4 agents, -> 
+- swarm of those 4 agents, ->
 - fda api for healthcare for commerically available papers
-- 
+-
 
 """
 
-from datetime import datetime
 import json
 import os
-from typing import Any, Callable, Dict, List
 import uuid
+from datetime import datetime
+from typing import Any, Callable, Dict, List
 
-from swarms import Agent, AgentRearrange, create_file_in_folder
+from dotenv import load_dotenv
 from loguru import logger
 from swarm_models import OpenAIChat
-from dotenv import load_dotenv
+from swarms import Agent, AgentRearrange, create_file_in_folder
 from swarms.telemetry.capture_sys_data import log_agent_data
 
 model_name = "gpt-4o"
 
-model = OpenAIChat(model_name=model_name, max_tokens=4000, openai_api_key=os.getenv("OPENAI_API_KEY"))
+model = OpenAIChat(
+    model_name=model_name,
+    max_tokens=4000,
+    openai_api_key=os.getenv("OPENAI_API_KEY"),
+)
 
 load_dotenv()
 
@@ -172,7 +176,6 @@ synthesizer = Agent(
 )
 
 
-
 # Create agent list
 agents = [
     chief_medical_officer,
@@ -186,8 +189,6 @@ agents = [
 flow = f"""{chief_medical_officer.agent_name} -> {virologist.agent_name} -> {internist.agent_name} -> {medical_coder.agent_name} -> {synthesizer.agent_name}"""
 
 
-
-
 class MedicalCoderSwarm:
     def __init__(
         self,
@@ -195,14 +196,14 @@ class MedicalCoderSwarm:
         description: str = "Comprehensive medical diagnosis and coding system",
         agents: list = agents,
         flow: str = flow,
-        patient_id: str = None,
+        patient_id: str = "001",
         max_loops: int = 1,
-        output_type: str = "dict",
+        output_type: str = "all",
         output_folder_path: str = "reports",
         patient_documentation: str = None,
         agent_outputs: list = any,
-        *args, 
-        **kwargs
+        *args,
+        **kwargs,
     ):
         self.name = name
         self.description = description
@@ -215,7 +216,7 @@ class MedicalCoderSwarm:
         self.patient_documentation = patient_documentation
         self.agent_outputs = agent_outputs
         self.agent_outputs = []
-        
+
         self.diagnosis_system = AgentRearrange(
             name="Medical-coding-diagnosis-swarm",
             description="Comprehensive medical diagnosis and coding system",
@@ -224,51 +225,71 @@ class MedicalCoderSwarm:
             max_loops=max_loops,
             output_type=output_type,
             *args,
-            **kwargs
+            **kwargs,
         )
-        
-        self.output_file_path = f"medical_diagnosis_report_{uuid.uuid4().hex}.md",
-        
+
+        self.output_file_path = (
+            f"medical_diagnosis_report_{patient_id}.md",
+        )
+
     def run(self, task: str = None, img: str = None, *args, **kwargs):
         """
         Run the medical coding and diagnosis system.
         """
-        logger.info("Running the medical coding and diagnosis system.")
-        
+        logger.info(
+            "Running the medical coding and diagnosis system."
+        )
+
         try:
             log_agent_data(self.to_dict())
-            case_info = f"Patient Information: {self.patient_id} \n Timestamp: {datetime.now()} \n Patient Documentation {self.patient_documentation} \n Task: {task}" 
-            
-            output = self.diagnosis_system.run(case_info, img, *args, **kwargs)
+            case_info = f"Patient Information: {self.patient_id} \n Timestamp: {datetime.now()} \n Patient Documentation {self.patient_documentation} \n Task: {task}"
+
+            output = self.diagnosis_system.run(
+                case_info, img, *args, **kwargs
+            )
             self.agent_outputs.append(output)
             log_agent_data(self.to_dict())
-            
-            create_file_in_folder(self.output_folder_path, self.output_file_path, output)
-            
+
+            create_file_in_folder(
+                self.output_folder_path, self.output_file_path, output
+            )
+
             return output
         except Exception as e:
-            logger.error(f"An error occurred during the diagnosis process: {e}")
             log_agent_data(self.to_dict())
+            logger.error(
+                f"An error occurred during the diagnosis process: {e}"
+            )
             return "An error occurred during the diagnosis process. Please check the logs for more information."
 
-    def batched_run(self, tasks: List[str] = None, imgs: List[str] = None, *args, **kwargs):
+    def batched_run(
+        self,
+        tasks: List[str] = None,
+        imgs: List[str] = None,
+        *args,
+        **kwargs,
+    ):
         """
         Run the medical coding and diagnosis system for multiple tasks.
         """
-        logger.add("medical_coding_diagnosis_system.log", rotation="10 MB")
-        
+        logger.add(
+            "medical_coding_diagnosis_system.log", rotation="10 MB"
+        )
+
         try:
             outputs = []
             for task, img in zip(tasks, imgs):
-                case_info = f"Patient Information: {self.patient_id} \n Timestamp: {datetime.now()} \n Patient Documentation {self.patient_documentation} \n Task: {task}" 
+                case_info = f"Patient Information: {self.patient_id} \n Timestamp: {datetime.now()} \n Patient Documentation {self.patient_documentation} \n Task: {task}"
                 output = self.run(case_info, img, *args, **kwargs)
                 outputs.append(output)
-                
+
             return outputs
         except Exception as e:
-            logger.error(f"An error occurred during the diagnosis process: {e}")
+            logger.error(
+                f"An error occurred during the diagnosis process: {e}"
+            )
             return "An error occurred during the diagnosis process. Please check the logs for more information."
-    
+
     def _serialize_callable(
         self, attr_value: Callable
     ) -> Dict[str, Any]:
@@ -326,4 +347,3 @@ class MedicalCoderSwarm:
             attr_name: self._serialize_attr(attr_name, attr_value)
             for attr_name, attr_value in self.__dict__.items()
         }
-    
