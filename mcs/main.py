@@ -21,8 +21,22 @@
 """
 
 from datetime import datetime
+import json
+import os
+from typing import Any, Callable, Dict, List
+import uuid
 
 from swarms import Agent, AgentRearrange, create_file_in_folder
+from loguru import logger
+from swarm_models import OpenAIChat
+from dotenv import load_dotenv
+from swarms.telemetry.capture_sys_data import log_agent_data
+
+model_name = "gpt-4o"
+
+model = OpenAIChat(model_name=model_name, max_tokens=4000, openai_api_key=os.getenv("OPENAI_API_KEY"))
+
+load_dotenv()
 
 chief_medical_officer = Agent(
     agent_name="Chief Medical Officer",
@@ -45,7 +59,7 @@ chief_medical_officer = Agent(
     
     
     """,
-    model_name="gpt-4o",
+    llm=model,
     max_loops=1,
 )
 
@@ -69,7 +83,7 @@ virologist = Agent(
         * Secondary condition codes
     
     Document all findings using proper medical coding standards and include rationale for code selection.""",
-    model_name="gpt-4o",
+    llm=model,
     max_loops=1,
 )
 
@@ -94,7 +108,7 @@ internist = Agent(
     - Include hierarchical condition category (HCC) codes where applicable
     
     Document supporting evidence for each code selected.""",
-    model_name="gpt-4o",
+    llm=model,
     max_loops=1,
 )
 
@@ -125,7 +139,7 @@ medical_coder = Agent(
     3. Symptom Codes
     4. Complication Codes
     5. Coding Notes""",
-    model_name="gpt-4o",
+    llm=model,
     max_loops=1,
 )
 
@@ -153,9 +167,11 @@ synthesizer = Agent(
         - Documentation improvements needed
     
     Include confidence levels and evidence quality for all diagnoses and codes.""",
-    model_name="gpt-4o",
+    llm=model,
     max_loops=1,
 )
+
+
 
 # Create agent list
 agents = [
@@ -169,80 +185,142 @@ agents = [
 # Define diagnostic flow
 flow = f"""{chief_medical_officer.agent_name} -> {virologist.agent_name} -> {internist.agent_name} -> {medical_coder.agent_name} -> {synthesizer.agent_name}"""
 
-# Create the swarm system
-diagnosis_system = AgentRearrange(
-    name="Medical-coding-diagnosis-swarm",
-    description="Comprehensive medical diagnosis and coding system",
-    agents=agents,
-    flow=flow,
-    max_loops=1,
-    output_type="all",
-)
 
 
-def generate_coding_report(diagnosis_output: str) -> str:
-    """
-    Generate a structured medical coding report from the diagnosis output.
-    """
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    report = f"""# Medical Diagnosis and Coding Report
-    Generated: {timestamp}
+class MedicalCoderSwarm:
+    def __init__(
+        self,
+        name: str = "Medical-coding-diagnosis-swarm",
+        description: str = "Comprehensive medical diagnosis and coding system",
+        agents: list = agents,
+        flow: str = flow,
+        patient_id: str = None,
+        max_loops: int = 1,
+        output_type: str = "dict",
+        output_folder_path: str = "reports",
+        patient_documentation: str = None,
+        agent_outputs: list = any,
+        *args, 
+        **kwargs
+    ):
+        self.name = name
+        self.description = description
+        self.agents = agents
+        self.flow = flow
+        self.patient_id = patient_id
+        self.max_loops = max_loops
+        self.output_type = output_type
+        self.output_folder_path = output_folder_path
+        self.patient_documentation = patient_documentation
+        self.agent_outputs = []
+        
+        self.diagnosis_system = AgentRearrange(
+            name="Medical-coding-diagnosis-swarm",
+            description="Comprehensive medical diagnosis and coding system",
+            agents=agents,
+            flow=flow,
+            max_loops=max_loops,
+            output_type=output_type,
+            *args,
+            **kwargs
+        )
+        
+        self.output_file_path = f"medical_diagnosis_report_{uuid.uuid4().hex}.md",
+        
+    def run(self, task: str = None, img: str = None, *args, **kwargs):
+        """
+        Run the medical coding and diagnosis system.
+        """
+        logger.add("medical_coding_diagnosis_system.log", rotation="10 MB")
+        
+        try:
+            case_info = f"Patient Information: {self.patient_id} \n Timestamp: {datetime.now()} \n Patient Documentation {self.patient_documentation} \n Task: {task}" 
+            
+            output = self.diagnosis_system.run(case_info, img, *args, **kwargs)
+            
+            self.agent_outputs.append(output)
+            
+            create_file_in_folder(self.output_folder_path, self.output_file_path, output)
+            
+            return output
+        except Exception as e:
+            logger.error(f"An error occurred during the diagnosis process: {e}")
+            return "An error occurred during the diagnosis process. Please check the logs for more information."
 
-    ## Clinical Summary
-    {diagnosis_output}
-
-    ## Coding Summary
-    ### Primary Diagnosis Codes
-    [Extracted from synthesis]
-
-    ### Secondary Diagnosis Codes
-    [Extracted from synthesis]
-
-    ### Symptom Codes
-    [Extracted from synthesis]
-
-    ### Procedure Codes (if applicable)
-    [Extracted from synthesis]
-
-    ## Documentation and Compliance Notes
-    - Code justification
-    - Supporting documentation references
-    - Any coding queries or clarifications needed
-
-    ## Recommendations
-    - Additional documentation needed
-    - Suggested follow-up
-    - Coding optimization opportunities
-    """
-    return report
-
-
-if __name__ == "__main__":
-    # Example patient case
-    patient_case = """
-    Patient: 45-year-old White Male
-
-    Lab Results:
-    - egfr 
-    - 59 ml / min / 1.73
-    - non african-american
+    def batched_run(self, tasks: List[str] = None, imgs: List[str] = None, *args, **kwargs):
+        """
+        Run the medical coding and diagnosis system for multiple tasks.
+        """
+        logger.add("medical_coding_diagnosis_system.log", rotation="10 MB")
+        
+        try:
+            outputs = []
+            for task, img in zip(tasks, imgs):
+                case_info = f"Patient Information: {self.patient_id} \n Timestamp: {datetime.now()} \n Patient Documentation {self.patient_documentation} \n Task: {task}" 
+                output = self.run(case_info, img, *args, **kwargs)
+                outputs.append(output)
+                
+            return outputs
+        except Exception as e:
+            logger.error(f"An error occurred during the diagnosis process: {e}")
+            return "An error occurred during the diagnosis process. Please check the logs for more information."
     
-    """
+    def _serialize_callable(
+        self, attr_value: Callable
+    ) -> Dict[str, Any]:
+        """
+        Serializes callable attributes by extracting their name and docstring.
 
-    # Add timestamp to the patient case
-    case_info = f"Timestamp: {datetime.now()}\nPatient Information: {patient_case}"
+        Args:
+            attr_value (Callable): The callable to serialize.
 
-    # Run the diagnostic process
-    diagnosis = diagnosis_system.run(case_info)
+        Returns:
+            Dict[str, Any]: Dictionary with name and docstring of the callable.
+        """
+        return {
+            "name": getattr(
+                attr_value, "__name__", type(attr_value).__name__
+            ),
+            "doc": getattr(attr_value, "__doc__", None),
+        }
 
-    # Generate coding report
-    coding_report = generate_coding_report(diagnosis)
+    def _serialize_attr(self, attr_name: str, attr_value: Any) -> Any:
+        """
+        Serializes an individual attribute, handling non-serializable objects.
 
-    # Create reports
-    create_file_in_folder(
-        "reports", "medical_diagnosis_report.md", diagnosis
-    )
-    create_file_in_folder(
-        "reports", "medical_coding_report.md", coding_report
-    )
+        Args:
+            attr_name (str): The name of the attribute.
+            attr_value (Any): The value of the attribute.
+
+        Returns:
+            Any: The serialized value of the attribute.
+        """
+        try:
+            if callable(attr_value):
+                return self._serialize_callable(attr_value)
+            elif hasattr(attr_value, "to_dict"):
+                return (
+                    attr_value.to_dict()
+                )  # Recursive serialization for nested objects
+            else:
+                json.dumps(
+                    attr_value
+                )  # Attempt to serialize to catch non-serializable objects
+                return attr_value
+        except (TypeError, ValueError):
+            return f"<Non-serializable: {type(attr_value).__name__}>"
+
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Converts all attributes of the class, including callables, into a dictionary.
+        Handles non-serializable attributes by converting them or skipping them.
+
+        Returns:
+            Dict[str, Any]: A dictionary representation of the class attributes.
+        """
+        return {
+            attr_name: self._serialize_attr(attr_name, attr_value)
+            for attr_name, attr_value in self.__dict__.items()
+        }
+    
