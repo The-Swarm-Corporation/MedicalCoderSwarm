@@ -19,7 +19,6 @@ if __name__ == "__main__":
         max_loops=1,
         patient_documentation="",
         output_folder_path="reports",
-        
     )
 
     swarm.run(task=patient_case)
