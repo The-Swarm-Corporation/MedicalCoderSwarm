@@ -120,6 +120,17 @@ To build and run the Docker container for the Medical Coder Swarm, follow these 
   docker run --rm mcs
   ```
 
+## Docker Compose
+
+```bash
+docker-compose up
+```
+
+### To stop the services, run:
+```bash
+docker-compose down
+```
+
 
 ## Lab Range Analysis
 

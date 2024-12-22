@@ -1,7 +1,7 @@
 version: "3.9"
 
 services:
-  medicalcoder-api:
+  mcs:
     build:
       context: .
       dockerfile: api/Dockerfile
@@ -12,9 +12,9 @@ services:
       - DB_PATH=/app/medical_coder.db
       - WORKSPACE_DIR="agent_workspace"
     volumes:
-      - medicalcoder-data:/app
+      - mcs-data:/app
     restart: always
 
 volumes:
-  medicalcoder-data:
+  mcs-data:
     driver: local
