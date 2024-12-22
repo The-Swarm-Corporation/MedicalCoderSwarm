@@ -38,21 +38,21 @@ connection.close()
 
 # Pydantic models
 class PatientCase(BaseModel):
-    patient_id: str
-    case_description: str
+    patient_id: Optional[str] = None
+    case_description: Optional[str] = None
 
 
 class QueryResponse(BaseModel):
-    patient_id: str
-    case_data: str
+    patient_id: Optional[str] = None
+    case_data: Optional[str] = None
 
 
 class QueryAllResponse(BaseModel):
-    patients: List[QueryResponse]
+    patients: Optional[List[QueryResponse]] = None
 
 
 class BatchPatientCase(BaseModel):
-    cases: List[PatientCase]
+    cases: Optional[List[PatientCase]] = None
 
 
 # Function to fetch patient data from the database
