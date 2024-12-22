@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from mcs.main import MedicalCoderSwarm
 
 # Initialize FastAPI app
-app = FastAPI(title="MedicalCoderSwarm API", version="1.0.0")
+app = FastAPI(title="MedicalCoderSwarm API", version="1.0.0", debug=True)
 
 db_path = "medical_coder.db"
 

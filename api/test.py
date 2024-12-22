@@ -108,7 +108,7 @@ def run_all_tests():
     test_delete_all_patients()
 
     print("\nTesting: Run Batch MedicalCoderSwarm")
-    test_run_medical_coder_batch()  # Added batch test here
+    test_run_medical_coder_batch() 
 
 
 if __name__ == "__main__":
