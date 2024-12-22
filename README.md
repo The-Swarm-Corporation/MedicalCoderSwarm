@@ -3,8 +3,36 @@
 
 [![Join our Discord](https://img.shields.io/badge/Discord-Join%20our%20server-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/agora-999382051935506503) [![Subscribe on YouTube](https://img.shields.io/badge/YouTube-Subscribe-red?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@kyegomez3242) [![Connect on LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/kye-g-38759a207/) [![Follow on X.com](https://img.shields.io/badge/X.com-Follow-1DA1F2?style=for-the-badge&logo=x&logoColor=white)](https://x.com/kyegomezb)
 
-A production-grade multi-agent system for comprehensive medical diagnosis and coding using specialized AI agents.
+MedicalSwarm is a sophisticated medical diagnosis and coding platform that leverages a coordinated swarm of specialized AI agents to deliver comprehensive medical assessments, accurate ICD-10 coding, and detailed clinical documentation. The system employs a hierarchical approach with specialized agents working in concert to analyze patient data, generate diagnoses, and ensure coding compliance.
 
+## Key Features
+
+### Multi-Agent Architecture
+
+- Chief Medical Officer: Coordinates diagnosis workflow and synthesizes findings
+- Virologist: Specializes in viral disease analysis and progression
+- Internist: Provides comprehensive internal medicine evaluation
+- Medical Coder: Ensures accurate ICD-10 coding and compliance
+- Diagnostic Synthesizer: Creates final integrated assessments
+
+
+### Enterprise Integration
+
+- RAG (Retrieval-Augmented Generation) API support
+- Comprehensive logging and telemetry
+- Scalable batch processing capabilities
+- Configurable output formats and storage
+
+
+### Clinical Documentation
+
+- Automated ICD-10 code assignment
+- Hierarchical Condition Category (HCC) coding
+- Evidence-based diagnostic rationale
+- Detailed clinical progression timelines
+
+
+-----
 
 ## Installation
 
@@ -17,7 +45,7 @@ To get started you must first set some envs in your `.env`
 
 ```env
 WORKSPACE_DIR="agent_workspace"
-OPENAI_API_KEY="your_key" # we might switch to claude because claude is generally better for medical operations
+OPENAI_API_KEY="your_key"
 
 ```
 

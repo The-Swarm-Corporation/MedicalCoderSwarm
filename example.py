@@ -1,5 +1,6 @@
-from mcs.main import MedicalCoderSwarm
 import json
+
+from mcs.main import MedicalCoderSwarm
 
 if __name__ == "__main__":
     # Example patient case
