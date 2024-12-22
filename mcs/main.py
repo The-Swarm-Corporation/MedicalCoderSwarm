@@ -24,6 +24,8 @@ import json
 import os
 from datetime import datetime
 from typing import Any, Callable, Dict, List
+
+from fastapi import requests
 from loguru import logger
 from swarm_models import OpenAIChat
 from swarms import Agent, AgentRearrange, create_file_in_folder
@@ -36,6 +38,35 @@ model = OpenAIChat(
     max_tokens=4000,
     openai_api_key=os.getenv("OPENAI_API_KEY"),
 )
+
+logger.add(
+    "medical_coding_diagnosis_system.log",
+    rotation="10 MB",
+)
+
+
+class RAGAPI:
+    def __init__(
+        self,
+        base_url: str = None,
+    ):
+        self.base_url = base_url
+
+    def query_rag(self, query: str):
+        """
+        Query the RAG API with a given prompt.
+        """
+        try:
+            response = requests.post(
+                f"{self.base_url}/query",
+                json={"query": query},
+            )
+            return response.json()
+        except Exception as e:
+            logger.error(
+                f"An error occurred during the RAG query: {e}"
+            )
+            return None
 
 
 chief_medical_officer = Agent(
@@ -61,6 +92,7 @@ chief_medical_officer = Agent(
     """,
     llm=model,
     max_loops=1,
+    dynamic_temperature_enabled=True,
 )
 
 virologist = Agent(
@@ -85,6 +117,7 @@ virologist = Agent(
     Document all findings using proper medical coding standards and include rationale for code selection.""",
     llm=model,
     max_loops=1,
+    dynamic_temperature_enabled=True,
 )
 
 internist = Agent(
@@ -110,6 +143,7 @@ internist = Agent(
     Document supporting evidence for each code selected.""",
     llm=model,
     max_loops=1,
+    dynamic_temperature_enabled=True,
 )
 
 medical_coder = Agent(
@@ -141,6 +175,7 @@ medical_coder = Agent(
     5. Coding Notes""",
     llm=model,
     max_loops=1,
+    dynamic_temperature_enabled=True,
 )
 
 synthesizer = Agent(
@@ -169,6 +204,7 @@ synthesizer = Agent(
     Include confidence levels and evidence quality for all diagnoses and codes.""",
     llm=model,
     max_loops=1,
+    dynamic_temperature_enabled=True,
 )
 
 
@@ -198,6 +234,8 @@ class MedicalCoderSwarm:
         output_folder_path: str = "reports",
         patient_documentation: str = None,
         agent_outputs: list = any,
+        rag_enabled: bool = False,
+        rag_url: str = None,
         *args,
         **kwargs,
     ):
@@ -211,6 +249,8 @@ class MedicalCoderSwarm:
         self.output_folder_path = output_folder_path
         self.patient_documentation = patient_documentation
         self.agent_outputs = agent_outputs
+        self.rag_enabled = rag_enabled
+        self.rag_url = rag_url
         self.agent_outputs = []
 
         self.diagnosis_system = AgentRearrange(
@@ -223,6 +263,11 @@ class MedicalCoderSwarm:
             *args,
             **kwargs,
         )
+
+        if self.rag_enabled:
+            self.diagnosis_system.memory_system = RAGAPI(
+                base_url=rag_url
+            )
 
         self.output_file_path = (
             f"medical_diagnosis_report_{patient_id}.md",
@@ -268,11 +313,14 @@ class MedicalCoderSwarm:
         """
         Run the medical coding and diagnosis system for multiple tasks.
         """
-        logger.add(
-            "medical_coding_diagnosis_system.log", rotation="10 MB"
-        )
+        # logger.add(
+        #     "medical_coding_diagnosis_system.log", rotation="10 MB"
+        # )
 
         try:
+            logger.info(
+                "Running the medical coding and diagnosis system for multiple tasks."
+            )
             outputs = []
             for task, img in zip(tasks, imgs):
                 case_info = f"Patient Information: {self.patient_id} \n Timestamp: {datetime.now()} \n Patient Documentation {self.patient_documentation} \n Task: {task}"
@@ -343,3 +391,14 @@ class MedicalCoderSwarm:
             attr_name: self._serialize_attr(attr_name, attr_value)
             for attr_name, attr_value in self.__dict__.items()
         }
+    
+    def save_patient_data(self, patient_id: str, case_data: str): 
+        """
+        Save patient data to a file.
+        """
+        try:
+            with open(f"{patient_id}.json", "w") as file:
+                file.write(case_data)
+        except Exception as e:
+            logger.error(f"An error occurred while saving patient data: {e}")
+            return None
