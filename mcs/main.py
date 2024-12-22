@@ -24,8 +24,6 @@ import json
 import os
 from datetime import datetime
 from typing import Any, Callable, Dict, List
-
-from dotenv import load_dotenv
 from loguru import logger
 from swarm_models import OpenAIChat
 from swarms import Agent, AgentRearrange, create_file_in_folder
@@ -39,7 +37,6 @@ model = OpenAIChat(
     openai_api_key=os.getenv("OPENAI_API_KEY"),
 )
 
-load_dotenv()
 
 chief_medical_officer = Agent(
     agent_name="Chief Medical Officer",
