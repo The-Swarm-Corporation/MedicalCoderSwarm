@@ -61,7 +61,7 @@ class RAGAPI:
                 f"{self.base_url}/query",
                 json={"query": query},
             )
-            return response.json()
+            return str(response.json())
         except Exception as e:
             logger.error(
                 f"An error occurred during the RAG query: {e}"
