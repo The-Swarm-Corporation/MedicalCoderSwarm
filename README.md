@@ -106,6 +106,21 @@ sequenceDiagram
     S->>P: Final Report
 ```
 
+## Docker Usage
+
+To build and run the Docker container for the Medical Coder Swarm, follow these steps:
+
+1. **Build the Docker Image**:
+  ```bash
+  docker build -t mcs .
+  ```
+
+2. **Run the Docker Container**:
+  ```bash
+  docker run --rm mcs
+  ```
+
+
 ## Lab Range Analysis
 
 The system includes specialized functionality for analyzing lab results against diagnostic criteria:
