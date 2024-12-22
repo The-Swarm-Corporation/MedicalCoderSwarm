@@ -106,6 +106,19 @@ sequenceDiagram
     S->>P: Final Report
 ```
 
+
+## API Usage
+We have established an api in the `/api` folder. To run the api locally you must git clone, and then run:
+
+```bash
+cd api
+
+chmod +x bootup.sh
+
+./bootup.sh
+
+```
+
 ## Docker Usage
 
 To build and run the Docker container for the Medical Coder Swarm, follow these steps:
@@ -130,6 +143,8 @@ docker-compose up
 ```bash
 docker-compose down
 ```
+
+
 
 
 ## Lab Range Analysis
