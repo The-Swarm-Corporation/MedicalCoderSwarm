@@ -12,6 +12,15 @@ A production-grade multi-agent system for comprehensive medical diagnosis and co
 pip install mcs
 ```
 
+## Onboarding
+To get started you must first set some envs in your `.env`
+
+```env
+WORKSPACE_DIR="agent_workspace"
+OPENAI_API_KEY="your_key" # we might switch to claude because claude is generally better for medical operations
+
+```
+
 ## Usage
 
 ```python
@@ -117,6 +126,15 @@ chmod +x bootup.sh
 
 ./bootup.sh
 
+```
+
+### API Testing
+When you launch your api you can run the tests to see if it works ;)
+
+```bash
+cd api
+
+python3 test.py
 ```
 
 ## Docker Usage
