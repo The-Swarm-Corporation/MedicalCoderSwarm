@@ -1,8 +1,10 @@
+import json
+import sqlite3
+from typing import List, Optional
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import List, Optional
-import sqlite3
-import json
+
 from mcs.main import MedicalCoderSwarm
 
 # Initialize FastAPI app
@@ -40,6 +42,10 @@ class QueryResponse(BaseModel):
 
 class QueryAllResponse(BaseModel):
     patients: List[QueryResponse]
+
+
+class BatchPatientCase(BaseModel):
+    cases: List[PatientCase]
 
 
 # Function to fetch patient data from the database
@@ -127,6 +133,37 @@ def get_all_patients():
         for row in rows
     ]
     return QueryAllResponse(patients=patients)
+
+
+@app.post(
+    "/v1/medical-coder/run-batch", response_model=List[QueryResponse]
+)
+def run_medical_coder_batch(batch: BatchPatientCase):
+    """
+    Run the MedicalCoderSwarm on a batch of patient cases.
+    """
+    responses = []
+    for patient_case in batch.cases:
+        swarm = MedicalCoderSwarm(
+            patient_id=patient_case.patient_id,
+            max_loops=1,
+            patient_documentation="",
+        )
+        swarm.run(task=patient_case.case_description)
+
+        swarm_output = swarm.to_dict()
+        save_patient_data(
+            patient_case.patient_id, json.dumps(swarm_output)
+        )
+
+        responses.append(
+            QueryResponse(
+                patient_id=patient_case.patient_id,
+                case_data=json.dumps(swarm_output),
+            )
+        )
+
+    return responses
 
 
 @app.delete("/v1/medical-coder/patient/{patient_id}")

@@ -62,6 +62,31 @@ def test_delete_all_patients():
     )
 
 
+def test_run_medical_coder_batch():
+    """Test running the MedicalCoderSwarm with multiple patient cases in a batch."""
+    batch_cases = {
+        "cases": [
+            {
+                "patient_id": "Patient-001",
+                "case_description": "Patient: 45-year-old White Male\nLocation: New York, NY\nLab Results:\n- egfr \n- 59 ml / min / 1.73\n- non african-american\n",
+            },
+            {
+                "patient_id": "Patient-002",
+                "case_description": "Patient: 60-year-old Female\nLocation: Los Angeles, CA\nLab Results:\n- Hemoglobin\n- 10.5 g/dL\n- Anemic\n",
+            },
+        ]
+    }
+
+    response = requests.post(
+        f"{BASE_URL}/run-batch", json=batch_cases
+    )
+    print(
+        "Run Batch MedicalCoderSwarm Response:",
+        response.status_code,
+        response.json(),
+    )
+
+
 def run_all_tests():
     """Run all tests in sequence."""
     print("Testing: Run MedicalCoderSwarm")
@@ -81,6 +106,9 @@ def run_all_tests():
 
     print("\nTesting: Delete All Patients")
     test_delete_all_patients()
+
+    print("\nTesting: Run Batch MedicalCoderSwarm")
+    test_run_medical_coder_batch()  # Added batch test here
 
 
 if __name__ == "__main__":
