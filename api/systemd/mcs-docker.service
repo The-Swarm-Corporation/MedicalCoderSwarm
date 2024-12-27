@@ -13,8 +13,7 @@ Restart=always
 ExecStartPre=-/usr/bin/docker stop %n
 ExecStartPre=-/usr/bin/docker rm %n
 ExecStartPre=/usr/bin/docker pull h4ckermike/swarms-mcs:experimental
-#ExecStart=/usr/bin/docker run --rm --name %n h4ckermike/mcs-api:experimental
-ExecStart=/usr/bin/docker run -p 8000:8000 -w /var/mcs/agent_workspace/ --mount type=bind,source=/opt/mcs,target=/opt/mcs  -e WORKSPACE_DIR=/var/mcs/agent_workspace/ --rm --name %n  h4ckermike/mcs-api:experimental /usr/bin/unbuffer /var/mcs/agent_workspace/.venv/bin/uvicorn --proxy-headers --forwarded-allow-ips='*'--workers=4 --host 0.0.0.0 --port=8000 --reload-delay=30 --app-dir /opt/mcs/api main:create_app
+ExecStart=/usr/bin/docker run -p 8000:8000 -w /var/mcs/agent_workspace/ --mount type=bind,source=/opt/mcs,target=/opt/mcs  -e WORKSPACE_DIR=/var/mcs/agent_workspace/ --rm --name %n  h4ckermike/swarms-mcs:experimental /usr/bin/unbuffer /var/mcs/agent_workspace/.venv/bin/uvicorn --proxy-headers --forwarded-allow-ips='*'--workers=4 --host 0.0.0.0 --port=8000 --reload-delay=30 --app-dir /opt/mcs/api main:create_app
 # --network host
 # leave these logs for now because they are
 # FIXME: update cloudwatch logs
