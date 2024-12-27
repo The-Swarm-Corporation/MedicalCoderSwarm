@@ -5,7 +5,7 @@ from typing import List, Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from loguru import logger
-from mcs.main import MedicalCoderSwarm
+from mcs import MedicalCoderSwarm
 
 # Initialize FastAPI app
 app = FastAPI(

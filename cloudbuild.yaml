@@ -1,0 +1,16 @@
+steps:
+  # Step to build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-f'
+      - 'Dockerfile'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/swarms-platform/mcs/mcs:latest'
+      - '.'
+
+  # Step to push the Docker image to the registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/swarms-platform/mcs/mcs:latest'

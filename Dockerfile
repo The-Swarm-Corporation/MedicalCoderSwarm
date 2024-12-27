@@ -32,5 +32,6 @@ RUN chmod +x bootup.sh
 # Expose the application port
 EXPOSE 8000
 
-# Start the application
-CMD ["./bootup.sh"]
+
+# start the server
+CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]
