@@ -38,4 +38,4 @@ COPY ./api /opt/mcs/api
 EXPOSE 8000
 
 # Start the application
-CMD ["bash -x ./bootup.sh"]
+CMD ["bash -x /opt/mcs/api/bootup.sh"]

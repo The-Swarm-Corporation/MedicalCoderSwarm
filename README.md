@@ -1,3 +1,14 @@
+# Infrastructure packageing for MSC
+
+1. terraform code to create mcs.api.swarms.ai and launch autoscaler group
+https://github.com/jmikedupont2/swarms-terraform/pull/15
+
+2. setup of nginx and systemd to launch docker process (wip)
+this allows flexibility of adding in https and other features in front as well as monitoring the system and restarting it on boot.
+3. setup of docker file to run mcs (wip)
+taking existing docker packaging.
+4. bootscript to launch into docker from shell (api/rundocker.sh)
+
 # Medical Diagnosis Swarm Architecture
 
 
