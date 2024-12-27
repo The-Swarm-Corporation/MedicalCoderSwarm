@@ -17,6 +17,7 @@ service:
 envs:
   WORKSPACE_DIR: "agent_workspace"
   OPENAI_API_KEY: ""
+  MASTER_KEY: "278327837287384572"
 
 resources:
   # cloud: aws  # The cloud to use (optional).

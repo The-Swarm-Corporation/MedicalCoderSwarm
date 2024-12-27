@@ -46,6 +46,7 @@ To get started you must first set some envs in your `.env`
 ```env
 WORKSPACE_DIR="agent_workspace"
 OPENAI_API_KEY="your_key"
+MASTER_KEY="328928402" # your master key for security
 
 ```
 
