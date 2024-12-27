@@ -236,7 +236,7 @@ class MedicalCoderSwarm:
         flow: str = flow,
         patient_id: str = "001",
         max_loops: int = 1,
-        output_type: str = "all",
+        output_type: str = "final",
         output_folder_path: str = "reports",
         patient_documentation: str = None,
         agent_outputs: list = any,
