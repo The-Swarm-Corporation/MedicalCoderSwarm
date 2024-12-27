@@ -1,6 +1,5 @@
 fastapi
 pydantic
-sqlite3
 json
 mcs
 cryptography
