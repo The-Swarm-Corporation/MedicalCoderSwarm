@@ -66,8 +66,8 @@ if ! grep -q "^HOME" "/var/run/mcs/secrets/env"; then
 fi
 
 # setup the systemd service again
-sed -e "s!ROOT!!g" > /etc/nginx/sites-enabled/default < "${WORKSOURCE}/nginx/site.conf"
-sed -e "s!ROOT!!g" > /etc/systemd/system/mcs-docker.service < "${WORKSOURCE}/systemd/mcs-docker.service"
+cp "${WORKSOURCE}/nginx/site.conf" /etc/nginx/sites-enabled/default
+cp "${WORKSOURCE}/systemd/mcs-docker.service" /etc/systemd/system/mcs-docker.service 
 grep . -h -n /etc/systemd/system/mcs-docker.service
 
 chown -R mcs:mcs /var/run/mcs/
