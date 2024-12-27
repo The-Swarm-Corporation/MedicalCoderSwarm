@@ -403,10 +403,10 @@ class MedicalCoderSwarm:
             output = self.diagnosis_system.run(
                 case_info, img, *args, **kwargs
             )
-            
+
             if self.summarization is True:
                 output = summarizer_agent.run(output)
-                
+
             self.agent_outputs.append(output)
             log_agent_data(self.to_dict())
 

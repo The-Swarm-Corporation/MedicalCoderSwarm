@@ -15,9 +15,9 @@ if __name__ == "__main__":
     """
 
     swarm = MedicalCoderSwarm(
-      patient_id="323u29382938293829382382398",
-      max_loops=1,
-      patient_documentation="",
+        patient_id="323u29382938293829382382398",
+        max_loops=1,
+        patient_documentation="",
     )
 
     print(swarm.run(task=patient_case))

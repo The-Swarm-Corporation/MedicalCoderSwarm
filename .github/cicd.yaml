@@ -1,0 +1,52 @@
+name: Build and Deploy to Cloud Run
+
+on:
+  push:
+    branches: ["main"]
+
+env:
+  PROJECT_ID: swarms-platform # Google Cloud project id
+  GAR_LOCATION: us-central1 # Artifact Registry location
+  SERVICE_NAME: mcs # Cloud Run service name
+  SERVICE_REGION: us-east1 # Cloud Run service region
+  ARTIFACTORY_URL: 'us-central1-docker.pkg.dev/swarms-platform/mcs/mcs:latest'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Google Cloud Auth
+        uses: "google-github-actions/auth@v2"
+        with:
+          credentials_json: "${{ secrets.GCP_SA_KEY }}"
+          project_id: ${{ env.PROJECT_ID }}
+
+      # BEGIN - Docker auth and build
+
+      - name: Configure Docker
+        run: |
+          gcloud auth configure-docker us-central1-docker.pkg.dev
+
+      - name: Build and Push Container
+        run: |-
+          docker build -f Dockerfile.prod -t "${{ env.ARTIFACTORY_URL }}:${{ github.sha }}" ./
+          docker push "${{ env.ARTIFACTORY_URL }}:${{ github.sha }}"
+
+      # END - Docker auth and build
+
+      - name: Deploy to Cloud Run
+        run: |
+          echo SERVICE_NAME $SERVICE_NAME
+          gcloud run deploy $SERVICE_NAME \
+            --image ${{ env.ARTIFACTORY_URL }}:${{ github.sha }} \
+            --platform managed \
+            --region $SERVICE_REGION \
+            --allow-unauthenticated
+
+      # If required, use the Cloud Run url output in later steps
+      - name: Show Output
+        run: echo ${{ steps.deploy.outputs.url }}
