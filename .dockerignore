@@ -1,0 +1,10 @@
+mcs
+docker-compose.yml
+example.py
+LICENSE
+pyproject.toml
+requirements.txt
+todo.md
+README.md
+Patient-001_encrypted.json
+.git

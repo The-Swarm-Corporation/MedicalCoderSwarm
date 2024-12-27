@@ -9,10 +9,11 @@ services:
       - "8000:8000"
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - DB_PATH=/app/medical_coder.db
+      - DB_PATH=/var/lib/mcs/medical_coder.db
       - WORKSPACE_DIR="agent_workspace"
     volumes:
-      - mcs-data:/opt/mcs
+      - mcs-data:/var/lib/mcs
+#      - mcs-data:/opt/mcs
     restart: always
 
 volumes:
