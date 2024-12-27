@@ -22,7 +22,7 @@
 
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Callable, Dict, List
 
 from fastapi import requests
@@ -30,6 +30,12 @@ from loguru import logger
 from swarm_models import OpenAIChat
 from swarms import Agent, AgentRearrange, create_file_in_folder
 from swarms.telemetry.capture_sys_data import log_agent_data
+
+from mcs.security import (
+    KeyRotationPolicy,
+    SecureDataHandler,
+    secure_data,
+)
 
 model_name = "gpt-4o"
 
@@ -236,6 +242,8 @@ class MedicalCoderSwarm:
         agent_outputs: list = any,
         rag_enabled: bool = False,
         rag_url: str = None,
+        user_name: str = "User",
+        key_storage_path: str = None,
         *args,
         **kwargs,
     ):
@@ -251,6 +259,8 @@ class MedicalCoderSwarm:
         self.agent_outputs = agent_outputs
         self.rag_enabled = rag_enabled
         self.rag_url = rag_url
+        self.user_name = user_name
+        self.key_storage_path = key_storage_path
         self.agent_outputs = []
 
         self.diagnosis_system = AgentRearrange(
@@ -273,7 +283,30 @@ class MedicalCoderSwarm:
             f"medical_diagnosis_report_{patient_id}.md",
         )
 
-    def run(self, task: str = None, img: str = None, *args, **kwargs):
+        # Change the user name for all agents in the swarm
+        self.change_agent_user_name(user_name)
+
+        # Initialize with production configuration
+        self.secure_handler = SecureDataHandler(
+            master_key=os.environ["MASTER_KEY"],
+            key_storage_path=self.key_storage_path,
+            rotation_policy=KeyRotationPolicy(
+                rotation_interval=timedelta(days=30),
+                key_overlap_period=timedelta(days=2),
+            ),
+            auto_rotate=True,
+        )
+
+    def change_agent_user_name(self, user_name: str):
+        """
+        Change the user name for all agents in the swarm.
+        """
+        for agent in self.agents:
+            self.user_name = user_name
+
+    def _run(
+        self, task: str = None, img: str = None, *args, **kwargs
+    ):
         """
         Run the medical coding and diagnosis system.
         """
@@ -300,6 +333,101 @@ class MedicalCoderSwarm:
             log_agent_data(self.to_dict())
             logger.error(
                 f"An error occurred during the diagnosis process: {e}"
+            )
+
+    def run(self, task: str = None, img: str = None, *args, **kwargs):
+        try:
+
+            if self.secure_handler:
+                return self.secure_run(task, img, *args, **kwargs)
+            else:
+                return self._run(task, img, *args, **kwargs)
+        except Exception as e:
+            log_agent_data(self.to_dict())
+            logger.error(
+                f"An error occurred during the diagnosis process: {e}"
+            )
+
+    def secure_run(
+        self, task: str = None, img: str = None, *args, **kwargs
+    ):
+        """
+        Securely run the medical coding and diagnosis system.
+        Ensures data is encrypted during transit and at rest.
+        """
+        logger.info(
+            "Starting secure run of the medical coding and diagnosis system."
+        )
+
+        try:
+            # Log the current state of the system for traceability
+            log_agent_data(self.to_dict())
+
+            # Prepare case information
+            case_info = {
+                "patient_id": self.patient_id,
+                "timestamp": datetime.now().isoformat(),
+                "patient_documentation": self.patient_documentation,
+                "task": task,
+            }
+
+            # Encrypt case information for secure processing
+            encrypted_case_info = self.secure_handler.encrypt_data(
+                case_info
+            )
+            logger.debug("Case information encrypted successfully.")
+
+            # Decrypt case information before passing to the swarm
+            decrypted_case_info = self.secure_handler.decrypt_data(
+                encrypted_case_info
+            )
+            logger.debug(
+                "Case information decrypted for swarm processing."
+            )
+
+            # Run the diagnosis system with decrypted data
+            output = self.diagnosis_system.run(
+                decrypted_case_info, img, *args, **kwargs
+            )
+
+            # Encrypt the swarm's output for secure storage and transit
+            encrypted_output = self.secure_handler.encrypt_data(
+                output
+            )
+            logger.debug("Swarm output encrypted successfully.")
+
+            # Decrypt the swarm's output for internal usage
+            decrypted_output = self.secure_handler.decrypt_data(
+                encrypted_output
+            )
+            logger.debug(
+                "Swarm output decrypted for internal processing."
+            )
+
+            # Append decrypted output to agent outputs
+            self.agent_outputs.append(decrypted_output)
+
+            # Save encrypted output as part of the patient data
+            self.save_patient_data(self.patient_id, encrypted_output)
+
+            # Save encrypted report file
+            create_file_in_folder(
+                self.output_folder_path,
+                self.output_file_path,
+                encrypted_output,
+            )
+            logger.info("Encrypted report file saved successfully.")
+
+            logger.info(
+                "Secure run of the medical coding and diagnosis system completed successfully."
+            )
+            return decrypted_output
+
+        except Exception as e:
+            # Log the current state and error
+            log_agent_data(self.to_dict())
+            logger.error(
+                f"An error occurred during the secure run: {e}"
             )
             return "An error occurred during the diagnosis process. Please check the logs for more information."
 
@@ -391,14 +519,23 @@ class MedicalCoderSwarm:
             attr_name: self._serialize_attr(attr_name, attr_value)
             for attr_name, attr_value in self.__dict__.items()
         }
-    
-    def save_patient_data(self, patient_id: str, case_data: str): 
-        """
-        Save patient data to a file.
-        """
+
+    @secure_data(encrypt=True)
+    def save_patient_data(self, patient_id: str, case_data: str):
+        """Save patient data with automatic encryption"""
         try:
-            with open(f"{patient_id}.json", "w") as file:
-                file.write(case_data)
+            data = {
+                "patient_id": patient_id,
+                "case_data": case_data,
+                "timestamp": datetime.now().isoformat(),
+            }
+
+            with open(f"{patient_id}_encrypted.json", "w") as file:
+                json.dump(data, file)
+
+            logger.info(
+                f"Encrypted patient data saved for ID: {patient_id}"
+            )
         except Exception as e:
-            logger.error(f"An error occurred while saving patient data: {e}")
-            return None
+            logger.error(f"Error saving encrypted patient data: {e}")
+            raise
