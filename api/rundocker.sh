@@ -79,7 +79,7 @@ chown -R mcs:mcs /opt/mcs/api/
 # might be leftover on the ami,
 systemctl stop swarms-uvicorn || echo ok
 systemctl disable swarms-uvicorn || echo ok
-rm /etc/systemd/system/swarms-uvicorn.service
+rm /etc/systemd/system/swarms-uvicorn.service || echo not there
 
 systemctl daemon-reload
 systemctl start mcs-docker || journalctl -xeu mcs-docker
