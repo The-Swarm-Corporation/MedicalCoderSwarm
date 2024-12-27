@@ -16,7 +16,7 @@ service:
 
 envs:
   WORKSPACE_DIR: "agent_workspace"
-  OPENAI_API_KEY: "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"
+  OPENAI_API_KEY: ""
 
 resources:
   # cloud: aws  # The cloud to use (optional).
