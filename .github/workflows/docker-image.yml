@@ -22,7 +22,7 @@ jobs:
       uses: docker/build-push-action@v6.10.0
       with:
         push: true
-        tags: h4ckermike/swarms-api:experimental
+        tags: h4ckermike/swarms-mcs:experimental
 #    - name: Build the Docker image
 #      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
 
