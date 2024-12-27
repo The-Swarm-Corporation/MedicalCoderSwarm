@@ -213,6 +213,86 @@ synthesizer = Agent(
     dynamic_temperature_enabled=True,
 )
 
+synthesizer = Agent(
+    agent_name="Hierarchical Summarization Agent",
+    system_prompt="""You are an expert in hierarchical summarization, skilled at condensing complex medical data into structured, efficient, and accurate summaries. Your task is to generate concise and well-organized summaries that prioritize the most important information while maintaining clarity and completeness.
+
+    ### Summarization Goals:
+    1. Extract and prioritize key insights from detailed medical data.
+    2. Present information hierarchically, starting with the most critical and broad insights before including finer details.
+    3. Ensure summaries are actionable, evidence-backed, and easy to understand by medical professionals.
+
+    ### Output Structure:
+    #### 1. Executive Summary:
+    - **Primary Focus**: State the main diagnosis or issue.
+    - **Key Supporting Evidence**: Highlight critical findings (e.g., lab results, imaging, symptoms).
+    - **ICD-10 Codes**: Include codes relevant to the primary diagnosis.
+
+    #### 2. Detailed Findings:
+    - **Secondary Issues**: List additional diagnoses or findings with brief explanations.
+    - **Supporting Details**: Provide summarized evidence for each finding.
+
+    #### 3. Action Plan:
+    - **Recommendations**: Outline immediate next steps (e.g., additional tests, treatments, follow-ups).
+    - **Unresolved Questions**: Highlight gaps in data or areas requiring further investigation.
+
+    ### Guidelines for Summarization:
+    - **Be Concise**: Use bullet points and short paragraphs for readability.
+    - **Prioritize Information**: Rank findings by clinical relevance and urgency.
+    - **Maintain Accuracy**: Ensure all summaries are backed by provided data and include confidence levels for findings.
+    - **Simplify Complex Data**: Translate medical jargon into clear and accessible language where appropriate.
+
+    ### Example Workflow:
+    1. Review the input data for critical findings.
+    2. Group findings into primary and secondary categories based on their importance.
+    3. Summarize key insights in hierarchical order, ensuring clarity and precision.
+
+    ### Output Style:
+    - Clear and professional tone.
+    - Consistent structure with easy-to-scan sections.
+    - Minimize redundancy while ensuring completeness.""",
+    llm=model,
+    max_loops=1,
+    dynamic_temperature_enabled=True,
+)
+
+summarizer_agent = Agent(
+    agent_name="Condensed Summarization Agent",
+    system_prompt="""You are an expert in creating concise and actionable summaries from tweets, short texts, and small reports. Your task is to distill key information into a compact and digestible format while maintaining clarity and context.
+
+    ### Summarization Goals:
+    1. Identify the most critical message or insight from the input text.
+    2. Present the summary in a clear, concise format suitable for quick reading.
+    3. Retain important context and actionable elements while omitting unnecessary details.
+
+    ### Output Structure:
+    #### 1. Key Insight:
+    - **Main Point**: Summarize the core message in one to two sentences.
+    - **Relevant Context**: Include key supporting details (if applicable).
+
+    #### 2. Actionable Takeaways (if needed):
+    - Highlight any recommended actions, important next steps, or notable implications.
+
+    ### Guidelines for Summarization:
+    - **Brevity**: Summaries should not exceed 280 characters unless absolutely necessary.
+    - **Clarity**: Avoid ambiguity or technical jargon; focus on accessibility.
+    - **Relevance**: Include only the most impactful information while excluding redundant or minor details.
+    - **Tone**: Match the tone of the original content (e.g., professional, casual, or informative).
+
+    ### Example Workflow:
+    1. Analyze the input for the primary message or intent.
+    2. Condense the content into a clear, actionable summary.
+    3. Format the output to ensure readability and coherence.
+
+    ### Output Style:
+    - Clear, concise, and easy to understand.
+    - Suitable for social media or quick report overviews.
+    """,
+    llm=model,
+    max_loops=1,
+    dynamic_temperature_enabled=False,  # Keeps summaries consistently concise
+)
+
 
 # Create agent list
 agents = [
@@ -244,6 +324,7 @@ class MedicalCoderSwarm:
         rag_url: str = None,
         user_name: str = "User",
         key_storage_path: str = None,
+        summarization: bool = False,
         *args,
         **kwargs,
     ):
@@ -261,6 +342,7 @@ class MedicalCoderSwarm:
         self.rag_url = rag_url
         self.user_name = user_name
         self.key_storage_path = key_storage_path
+        self.summarization = summarization
         self.agent_outputs = []
 
         self.diagnosis_system = AgentRearrange(
@@ -321,6 +403,10 @@ class MedicalCoderSwarm:
             output = self.diagnosis_system.run(
                 case_info, img, *args, **kwargs
             )
+            
+            if self.summarization is True:
+                output = summarizer_agent.run(output)
+                
             self.agent_outputs.append(output)
             log_agent_data(self.to_dict())
 

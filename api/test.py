@@ -1,6 +1,6 @@
 import requests
 
-BASE_URL = "http://127.0.0.1:8000/v1/medical-coder"
+BASE_URL = "http://127.0.0.1:8000/v1"
 
 # Mock data for testing
 patient_case_1 = {

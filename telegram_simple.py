@@ -7,7 +7,7 @@ from telegram.ext import (
     ContextTypes,
     filters,
 )
-from mcs.main import MedicalCoderSwarm
+from mcs import MedicalCoderSwarm
 import logging
 from dotenv import load_dotenv
 
