@@ -4,7 +4,7 @@ services:
   mcs:
     build:
       context: .
-      dockerfile: api/Dockerfile
+      #dockerfile: Dockerfile
     ports:
       - "8000:8000"
     environment:
@@ -12,7 +12,7 @@ services:
       - DB_PATH=/app/medical_coder.db
       - WORKSPACE_DIR="agent_workspace"
     volumes:
-      - mcs-data:/app
+      - mcs-data:/opt/mcs
     restart: always
 
 volumes:
