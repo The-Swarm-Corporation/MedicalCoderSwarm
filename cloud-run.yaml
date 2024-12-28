@@ -1,0 +1,6 @@
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 100
+  periodSeconds: 100
