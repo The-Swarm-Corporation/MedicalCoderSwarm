@@ -289,9 +289,10 @@ if __name__ == "__main__":
         uvicorn.run(
             app,
             host="0.0.0.0",
-            port=os.getenv("PORT"),
+            port=8000,
             log_level="info",
             reload=True,
+            workers=os.cpu_count() * 2,
         )
     except Exception as e:
         print(f"An error occurred: {e}")
