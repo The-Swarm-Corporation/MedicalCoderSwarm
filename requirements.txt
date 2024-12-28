@@ -3,3 +3,5 @@ loguru
 swarm-models
 cryptography
 python-dotenv
+pkg_resources
+setuptools
