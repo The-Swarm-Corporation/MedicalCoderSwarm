@@ -172,7 +172,7 @@ RUN /var/mcs/agent_workspace/.venv/bin/python -m pip install torch==2.5.1
 RUN /var/mcs/agent_workspace/.venv/bin/python -m pip install together==1.3.10
 
 ###
-RUN /var/mcs/agent_workspace/.venv/bin/python -m pip install git+https://github.com/jmikedupont2/swarm-models@main#egg=swarms-models
+RUN /var/mcs/agent_workspace/.venv/bin/python -m pip install git+https://github.com/jmikedupont2/swarm-models@main#egg=swarm-models
 
 RUN /var/mcs/agent_workspace/.venv/bin/python -m pip install git+https://github.com/jmikedupont2/swarms@feature/merge_latest_675#egg=swarms
 
