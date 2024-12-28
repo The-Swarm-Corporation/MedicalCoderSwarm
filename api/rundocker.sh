@@ -16,6 +16,9 @@ set -e # stop  on any error
 #export ROOT="" # empty
 export WORKSOURCE="/opt/mcs/api"
 
+# login to ecr from docker 
+aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 916723593639.dkr.ecr.us-east-2.amazonaws.com
+
 adduser --disabled-password --gecos "" mcs --home "/home/mcs"  || echo ignore
 git config --global --add safe.directory "/opt/mcs"
 git config --global --add safe.directory "/opt/mcs-memory"
