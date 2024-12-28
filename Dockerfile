@@ -223,6 +223,21 @@ WORKDIR /var/mcs/agent_workspace
 #RUN mkdir -p /opt/mcs
 # Copy the rest of the application code
 COPY ./api/main.py /opt/mcs/api/main.py
+#RUN mkdir -p /opt/mcs/mcs
+
+#COPY ./pyproject.toml /opt/mcs/pyproject.toml
+
+USER root
+#ADD /mcs /opt/mcs/mcs
+
+ADD . /opt/mcs
+#ADD /mcs/__init__.py /opt/mcs/mcs/__init__.py
+#COPY ./mcs/main.py /opt/mcs/mcs/main.py
+#COPY ./mcs/security.py /opt/mcs/mcs/security.py
+
+USER mcs
+# now install mcs
+RUN /var/mcs/agent_workspace/.venv/bin/python -m pip install -e /opt/mcs/
 #COPY ./api/bootup.sh /opt/mcs/api/bootup.sh
 
 # Make the bootup script executable
