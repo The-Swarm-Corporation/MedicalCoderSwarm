@@ -8,6 +8,7 @@ from typing import List, Optional
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from loguru import logger
 from pydantic import BaseModel
 
@@ -51,27 +52,37 @@ cursor.execute(
     )
     """
 )
+# Create api_keys table if it doesn't exist
+cursor.execute(
+    """
+    CREATE TABLE IF NOT EXISTS api_keys (
+        key TEXT PRIMARY KEY,
+        created_at TEXT,
+        last_reset TEXT,
+        requests_remaining INTEGER DEFAULT 1000
+    )
+    """
+)
+
 connection.commit()
 connection.close()
 
-
 def generate_api_key():
     """Generate a new API key and store it in the database."""
-    key = secrets.token_hex(
-        32
-    )  # Generate a secure, random 64-character hex key
+    key = secrets.token_hex(32)  # Generate a secure, random 64-character hex key
     now = datetime.utcnow().isoformat()
     try:
         connection = sqlite3.connect(db_path)
         cursor = connection.cursor()
         cursor.execute(
-            "INSERT INTO api_keys (key, created_at, last_reset) VALUES (?, ?, ?)",
-            (key, now, now),
+            "INSERT INTO api_keys (key, created_at, last_reset, requests_remaining) VALUES (?, ?, ?, ?)",
+            (key, now, now, 1000),
         )
         connection.commit()
         connection.close()
     except sqlite3.Error as e:
         logger.error(f"Error generating API key: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate API key")
     return key
 
 
@@ -80,6 +91,8 @@ def validate_api_key(api_key: str = Header(...)):
     try:
         connection = sqlite3.connect(db_path)
         cursor = connection.cursor()
+
+        # Fetch API key details
         cursor.execute(
             "SELECT requests_remaining, last_reset FROM api_keys WHERE key = ?",
             (api_key,),
@@ -87,40 +100,34 @@ def validate_api_key(api_key: str = Header(...)):
         row = cursor.fetchone()
 
         if not row:
-            raise HTTPException(
-                status_code=401, detail="Invalid API key"
-            )
+            raise HTTPException(status_code=401, detail="Invalid API key")
 
         requests_remaining, last_reset = row
-        last_reset_time = datetime.fromisoformat(last_reset)
         now = datetime.utcnow()
 
-        # Reset daily quota at midnight UTC
+        # Reset daily quota if it's a new day
+        last_reset_time = datetime.fromisoformat(last_reset)
         if now.date() > last_reset_time.date():
-            requests_remaining = 1000  # Reset to daily quota
+            requests_remaining = 1000
             last_reset = now.isoformat()
             cursor.execute(
-                "UPDATE api_keys SET requests_remaining = 1000, last_reset = ? WHERE key = ?",
-                (last_reset, api_key),
+                "UPDATE api_keys SET requests_remaining = ?, last_reset = ? WHERE key = ?",
+                (requests_remaining, last_reset, api_key),
             )
 
+        # Check quota
         if requests_remaining <= 0:
-            raise HTTPException(
-                status_code=429, detail="Rate limit exceeded"
-            )
+            raise HTTPException(status_code=429, detail="Rate limit exceeded")
 
-        # Decrease the remaining requests
+        # Deduct a request
         cursor.execute(
             "UPDATE api_keys SET requests_remaining = requests_remaining - 1 WHERE key = ?",
             (api_key,),
         )
         connection.commit()
-        connection.close()
     except sqlite3.Error as e:
         logger.error(f"Error validating API key: {e}")
-        raise HTTPException(
-            status_code=500, detail="Internal Server Error"
-        )
+        raise HTTPException(status_code=500, detail="Internal Server Error")
     finally:
         if connection:
             connection.close()
@@ -194,6 +201,14 @@ def save_patient_data(patient_id: str, patient_data: str):
     except sqlite3.Error as e:
         logger.error(f"Error saving patient data: {e}")
 
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request, exc):
+    logger.error(f"Unexpected error: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An unexpected error occurred. Please try again later."},
+    )
 
 @app.post("/v1/medical-coder/run", response_model=QueryResponse)
 def run_medical_coder(
