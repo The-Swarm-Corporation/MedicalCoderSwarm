@@ -179,6 +179,7 @@ RUN /var/mcs/agent_workspace/.venv/bin/python -m pip install git+https://github.
 # just try and install from here
 RUN /var/mcs/agent_workspace/.venv/bin/python -m pip install git+https://github.com/jmikedupont2/swarms-MedicalCoderSwarm-deployment/@feature/mcs#egg=mcs
 
+RUN /var/mcs/agent_workspace/.venv/bin/python -m pip install cryptography
     
 
 #    
