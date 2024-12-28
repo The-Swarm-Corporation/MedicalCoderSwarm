@@ -1,6 +1,6 @@
 import requests
 
-BASE_URL = "http://127.0.0.1:8000/v1"
+BASE_URL = "https://mcs-285321057562.us-central1.run.app/v1"
 
 # Mock data for testing
 patient_case_1 = {
@@ -57,6 +57,16 @@ def test_delete_all_patients():
     response = requests.delete(f"{BASE_URL}/patients")
     print(
         "Delete All Patients Response:",
+        response.status_code,
+        response.json(),
+    )
+
+
+def test_health_check():
+    """Test the health check endpoint."""
+    response = requests.get(f"{BASE_URL}/health")
+    print(
+        "Health Check Response:",
         response.status_code,
         response.json(),
     )

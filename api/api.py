@@ -1,20 +1,25 @@
 import json
 import os
+import secrets
 import sqlite3
+from datetime import datetime
 from typing import List, Optional
 
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from loguru import logger
-from mcs import MedicalCoderSwarm
 from dotenv import load_dotenv
+from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from loguru import logger
+from pydantic import BaseModel
+
+from mcs import MedicalCoderSwarm
 
 load_dotenv()
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="MedicalCoderSwarm API", version="1.0.0", debug=True, 
+    title="MedicalCoderSwarm API",
+    version="1.0.0",
+    debug=True,
 )
 
 
@@ -48,6 +53,95 @@ cursor.execute(
 )
 connection.commit()
 connection.close()
+
+
+def generate_api_key():
+    """Generate a new API key and store it in the database."""
+    key = secrets.token_hex(
+        32
+    )  # Generate a secure, random 64-character hex key
+    now = datetime.utcnow().isoformat()
+    try:
+        connection = sqlite3.connect(db_path)
+        cursor = connection.cursor()
+        cursor.execute(
+            "INSERT INTO api_keys (key, created_at, last_reset) VALUES (?, ?, ?)",
+            (key, now, now),
+        )
+        connection.commit()
+        connection.close()
+    except sqlite3.Error as e:
+        logger.error(f"Error generating API key: {e}")
+    return key
+
+
+def validate_api_key(api_key: str = Header(...)):
+    """Validate the API key and enforce rate limiting."""
+    try:
+        connection = sqlite3.connect(db_path)
+        cursor = connection.cursor()
+        cursor.execute(
+            "SELECT requests_remaining, last_reset FROM api_keys WHERE key = ?",
+            (api_key,),
+        )
+        row = cursor.fetchone()
+
+        if not row:
+            raise HTTPException(
+                status_code=401, detail="Invalid API key"
+            )
+
+        requests_remaining, last_reset = row
+        last_reset_time = datetime.fromisoformat(last_reset)
+        now = datetime.utcnow()
+
+        # Reset daily quota at midnight UTC
+        if now.date() > last_reset_time.date():
+            requests_remaining = 1000  # Reset to daily quota
+            last_reset = now.isoformat()
+            cursor.execute(
+                "UPDATE api_keys SET requests_remaining = 1000, last_reset = ? WHERE key = ?",
+                (last_reset, api_key),
+            )
+
+        if requests_remaining <= 0:
+            raise HTTPException(
+                status_code=429, detail="Rate limit exceeded"
+            )
+
+        # Decrease the remaining requests
+        cursor.execute(
+            "UPDATE api_keys SET requests_remaining = requests_remaining - 1 WHERE key = ?",
+            (api_key,),
+        )
+        connection.commit()
+        connection.close()
+    except sqlite3.Error as e:
+        logger.error(f"Error validating API key: {e}")
+        raise HTTPException(
+            status_code=500, detail="Internal Server Error"
+        )
+    finally:
+        if connection:
+            connection.close()
+
+
+@app.post("/v1/generate-key")
+def create_api_key():
+    """Endpoint to create a new API key."""
+    api_key = generate_api_key()
+    return {"api_key": api_key}
+
+
+@app.get("/v1/validate-key")
+def check_key(api_key: str = Depends(validate_api_key)):
+    """Validate API key and return success if valid."""
+    return {"status": "API key is valid"}
+
+
+# Dependency to validate API key
+def get_api_key_dependency(api_key: str = Depends(validate_api_key)):
+    return api_key
 
 
 # Pydantic models
@@ -102,7 +196,10 @@ def save_patient_data(patient_id: str, patient_data: str):
 
 
 @app.post("/v1/medical-coder/run", response_model=QueryResponse)
-def run_medical_coder(patient_case: PatientCase):
+def run_medical_coder(
+    patient_case: PatientCase,
+    api_key: str = Depends(get_api_key_dependency),
+):
     """
     Run the MedicalCoderSwarm on a given patient case.
     """
@@ -145,7 +242,9 @@ def run_medical_coder(patient_case: PatientCase):
     "/v1/medical-coder/patient/{patient_id}",
     response_model=QueryResponse,
 )
-def get_patient_data(patient_id: str):
+def get_patient_data(
+    patient_id: str, api_key: str = Depends(get_api_key_dependency)
+):
     """
     Retrieve patient data by patient ID.
     """
@@ -176,7 +275,7 @@ def get_patient_data(patient_id: str):
 @app.get(
     "/v1/medical-coder/patients", response_model=QueryAllResponse
 )
-def get_all_patients():
+def get_all_patients(api_key: str = Depends(get_api_key_dependency)):
     """
     Retrieve all patient data.
     """
@@ -206,7 +305,10 @@ def get_all_patients():
 @app.post(
     "/v1/medical-coder/run-batch", response_model=List[QueryResponse]
 )
-def run_medical_coder_batch(batch: BatchPatientCase):
+def run_medical_coder_batch(
+    batch: BatchPatientCase,
+    api_key: str = Depends(get_api_key_dependency),
+):
     """
     Run the MedicalCoderSwarm on a batch of patient cases.
     """
@@ -248,9 +350,10 @@ def health_check():
     return {"status": "healthy"}
 
 
-
 @app.delete("/v1/medical-coder/patient/{patient_id}")
-def delete_patient_data(patient_id: str):
+def delete_patient_data(
+    patient_id: str, api_key: str = Depends(get_api_key_dependency)
+):
     """
     Delete a patient's data by patient ID.
     """
@@ -278,7 +381,9 @@ def delete_patient_data(patient_id: str):
 
 
 @app.delete("/v1/medical-coder/patients")
-def delete_all_patients():
+def delete_all_patients(
+    api_key: str = Depends(get_api_key_dependency),
+):
     """
     Delete all patient data.
     """
