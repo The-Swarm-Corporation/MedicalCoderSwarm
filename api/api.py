@@ -8,12 +8,22 @@ from pydantic import BaseModel
 from loguru import logger
 from mcs import MedicalCoderSwarm
 from dotenv import load_dotenv
+from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="MedicalCoderSwarm API", version="1.0.0", debug=True
+    title="MedicalCoderSwarm API", version="1.0.0", debug=True, 
+)
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 db_path = "medical_coder.db"
@@ -298,7 +308,7 @@ if __name__ == "__main__":
         uvicorn.run(
             app,
             host="0.0.0.0",
-            port=8000,
+            port=8080,
             log_level="info",
             reload=True,
             workers=os.cpu_count() * 2,
