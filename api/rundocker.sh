@@ -82,12 +82,14 @@ systemctl disable swarms-uvicorn || echo ok
 rm /etc/systemd/system/swarms-uvicorn.service || echo not there
 
 systemctl daemon-reload
-systemctl start mcs-docker || journalctl -xeu mcs-docker
-systemctl enable mcs-docker || journalctl -xeu mcs-docker
+systemctl start mcs-docker || echo failed
+    #journalctl -xeu mcs-docker
+systemctl enable mcs-docker || echo failed
+#journalctl -xeu mcs-docker
 systemctl enable nginx
 systemctl start nginx
 
-journalctl -xeu mcs-docker | tail -200 || echo oops
+#journalctl -xeu mcs-docker | tail -200 || echo oops
 systemctl status mcs-docker || echo oops2
 
 # now after mcs is up, we restart nginx
