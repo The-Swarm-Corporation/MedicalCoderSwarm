@@ -1,22 +1,22 @@
 import asyncio
-from datetime import datetime
-from typing import List, Optional, Dict, Any
-import time
 import json
+import time
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
+import aiohttp
+import backoff
+import tweepy
 from fastapi import (
+    BackgroundTasks,
     FastAPI,
     HTTPException,
-    BackgroundTasks,
     Response,
     status,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-import tweepy
 from loguru import logger
-import aiohttp
-import backoff
+from pydantic import BaseModel, Field
 
 from mcs.main import MedicalCoderSwarm
 
