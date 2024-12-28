@@ -35,6 +35,7 @@ EXPOSE 8000
 
 
 # Pip install uvicorn
+RUN pip install setuptools
 RUN pip install uvicorn
 
 
