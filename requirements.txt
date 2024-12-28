@@ -1,5 +1,5 @@
-swarms
-loguru
-swarm-models
+#swarms
+#loguru
+#swarm-models
 cryptography
 pysqlite
