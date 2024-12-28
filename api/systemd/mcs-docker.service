@@ -1,20 +1,28 @@
+# derived from https://phil.lavin.me.uk/2021/12/running-docker-containers-from-aws-ecr-with-systemd/
 # derived from https://github.com/encode/uvicorn/issues/678
-# dervied from https://blog.container-solutions.com/running-docker-containers-with-systemd
+# derived from https://blog.container-solutions.com/running-docker-containers-with-systemd
+
 [Unit]
 Description=mcs
 After=docker.service
-#Required=docker.service
+Requires=docker.service
+StartLimitInterval=200
+StartLimitBurst=10
 
 [Service]
 EnvironmentFile=/var/run/mcs/secrets/env
 RestartSec=10
 TimeoutStartSec=0
 Restart=always
-ExecStartPre=-/usr/bin/docker stop %n
-ExecStartPre=-/usr/bin/docker rm %n
-#ExecStartPre=/usr/bin/docker pull h4ckermike/swarms-mcs:experimental `docker tag h4ckermike/swarms-mcs:experimental 916723593639.dkr.ecr.us-east-2.amazonaws.com/swarms/mcs:latest
-ExecStartPre=aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 916723593639.dkr.ecr.us-east-2.amazonaws.com && /usr/bin/docker pull 916723593639.dkr.ecr.us-east-2.amazonaws.com/swarms/mcs:latest
+
+ExecStartPre=-/usr/bin/docker exec %n stop || echo cannot prestop
+ExecStartPre=-/usr/bin/docker rm %n || echo cannot preremove
+
+ExecStartPre=/usr/bin/bash -c 'docker login -u AWS -p $(aws ecr get-login-password --region us-east-2) 916723593639.dkr.ecr.us-east-2.amazonaws.com'
+ExecStartPre=/usr/bin/docker pull 916723593639.dkr.ecr.us-east-2.amazonaws.com/swarms/mcs:latest
+
 ExecStart=/usr/bin/docker run -p 8000:8000 -w /var/mcs/agent_workspace/ --mount type=bind,source=/opt/mcs,target=/opt/mcs --env-file /var/run/mcs/secrets/env  -e WORKSPACE_DIR=/var/mcs/agent_workspace/ --rm --name %n  916723593639.dkr.ecr.us-east-2.amazonaws.com/swarms/mcs:latest /usr/bin/unbuffer /var/mcs/agent_workspace/.venv/bin/uvicorn --proxy-headers --forwarded-allow-ips='*'--workers=4 --host 0.0.0.0 --port=8000 --reload-delay=30 --app-dir /opt/mcs/api main:app
+
 # --network host
 # leave these logs for now because they are
 # FIXME: update cloudwatch logs
