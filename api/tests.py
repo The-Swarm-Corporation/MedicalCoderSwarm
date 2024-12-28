@@ -13,6 +13,24 @@ patient_case_2 = {
     "case_description": "Patient: 60-year-old Female\nLocation: Los Angeles, CA\nLab Results:\n- Hemoglobin\n- 10.5 g/dL\n- Anemic\n",
 }
 
+# Global variable for API key
+API_KEY = None
+
+
+def generate_api_key():
+    """Generate an API key using the API."""
+    global API_KEY
+    response = requests.post(f"{BASE_URL}/generate-key")
+    if response.status_code == 200:
+        API_KEY = response.json()["api_key"]
+        print(f"Generated API Key: {API_KEY}\n")
+    else:
+        print(
+            f"Failed to generate API key. Status Code: {response.status_code}"
+        )
+        print(f"Response: {response.text}\n")
+        exit(1)
+
 
 def test_health_check():
     print("Testing: Health Check")
@@ -23,8 +41,11 @@ def test_health_check():
 
 def test_run_medical_coder():
     print("Testing: Run MedicalCoderSwarm")
+    headers = {"api_key": API_KEY}
     response = requests.post(
-        f"{BASE_URL}/medical-coder/run", json=patient_case_1
+        f"{BASE_URL}/medical-coder/run",
+        json=patient_case_1,
+        headers=headers,
     )
     print(f"Status Code: {response.status_code}")
     print(f"Response: {response.json()}\n")
@@ -32,8 +53,10 @@ def test_run_medical_coder():
 
 def test_get_patient():
     print("Testing: Get Patient Data")
+    headers = {"api_key": API_KEY}
     response = requests.get(
-        f"{BASE_URL}/medical-coder/patient/{patient_case_1['patient_id']}"
+        f"{BASE_URL}/medical-coder/patient/{patient_case_1['patient_id']}",
+        headers=headers,
     )
     print(f"Status Code: {response.status_code}")
     print(f"Response: {response.json()}\n")
@@ -41,15 +64,20 @@ def test_get_patient():
 
 def test_get_all_patients():
     print("Testing: Get All Patients")
-    response = requests.get(f"{BASE_URL}/medical-coder/patients")
+    headers = {"api_key": API_KEY}
+    response = requests.get(
+        f"{BASE_URL}/medical-coder/patients", headers=headers
+    )
     print(f"Status Code: {response.status_code}")
     print(f"Response: {response.json()}\n")
 
 
 def test_delete_patient():
     print("Testing: Delete Patient Data")
+    headers = {"api_key": API_KEY}
     response = requests.delete(
-        f"{BASE_URL}/medical-coder/patient/{patient_case_1['patient_id']}"
+        f"{BASE_URL}/medical-coder/patient/{patient_case_1['patient_id']}",
+        headers=headers,
     )
     print(f"Status Code: {response.status_code}")
     print(f"Response: {response.json()}\n")
@@ -57,7 +85,10 @@ def test_delete_patient():
 
 def test_delete_all_patients():
     print("Testing: Delete All Patients")
-    response = requests.delete(f"{BASE_URL}/medical-coder/patients")
+    headers = {"api_key": API_KEY}
+    response = requests.delete(
+        f"{BASE_URL}/medical-coder/patients", headers=headers
+    )
     print(f"Status Code: {response.status_code}")
     print(f"Response: {response.json()}\n")
 
@@ -65,14 +96,18 @@ def test_delete_all_patients():
 def test_run_batch_medical_coder():
     print("Testing: Run Batch MedicalCoderSwarm")
     batch_cases = {"cases": [patient_case_1, patient_case_2]}
+    headers = {"api_key": API_KEY}
     response = requests.post(
-        f"{BASE_URL}/medical-coder/run-batch", json=batch_cases
+        f"{BASE_URL}/medical-coder/run-batch",
+        json=batch_cases,
+        headers=headers,
     )
     print(f"Status Code: {response.status_code}")
     print(f"Response: {response.json()}\n")
 
 
 def run_all_tests():
+    generate_api_key()  # Generate and set API key before running tests
     test_health_check()
     test_run_medical_coder()
     test_get_patient()
