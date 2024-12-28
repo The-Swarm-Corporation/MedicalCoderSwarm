@@ -8,6 +8,7 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV OPENAI_API_KEY="your_key"
 ENV WORKSPACE_DIR="agent_workspace"
+ENV PORT=8000
 
 # Set the working directory inside the container
 WORKDIR /app

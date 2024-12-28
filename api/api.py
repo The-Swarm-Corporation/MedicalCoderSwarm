@@ -1,4 +1,5 @@
 import json
+import os
 import sqlite3
 from typing import List, Optional
 
@@ -6,6 +7,9 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from loguru import logger
 from mcs import MedicalCoderSwarm
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -285,7 +289,7 @@ if __name__ == "__main__":
         uvicorn.run(
             app,
             host="0.0.0.0",
-            port=8000,
+            port=os.getenv("PORT", 8000),
             log_level="info",
             reload=True,
         )
