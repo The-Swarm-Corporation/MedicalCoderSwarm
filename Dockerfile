@@ -176,6 +176,11 @@ RUN /var/mcs/agent_workspace/.venv/bin/python -m pip install git+https://github.
 
 RUN /var/mcs/agent_workspace/.venv/bin/python -m pip install git+https://github.com/jmikedupont2/swarms@feature/merge_latest_675#egg=swarms
 
+# just try and install from here
+RUN /var/mcs/agent_workspace/.venv/bin/python -m pip install git+https://github.com/jmikedupont2/swarms-MedicalCoderSwarm-deployment/@feature/mcs#egg=mcs
+
+    
+
 #    
 # swarm-models==0.2.7 #  BIG 55 sec
 #RUN /var/mcs/agent_workspace/.venv/bin/python -m pip install -r /opt/swarms/requirements.txt
@@ -227,17 +232,18 @@ COPY ./api/main.py /opt/mcs/api/main.py
 
 #COPY ./pyproject.toml /opt/mcs/pyproject.toml
 
-USER root
+#USER root
 #ADD /mcs /opt/mcs/mcs
 
-ADD . /opt/mcs
+#ADD . /opt/mcs
 #ADD /mcs/__init__.py /opt/mcs/mcs/__init__.py
 #COPY ./mcs/main.py /opt/mcs/mcs/main.py
 #COPY ./mcs/security.py /opt/mcs/mcs/security.py
 
-USER mcs
+#USER mcs
 # now install mcs
-RUN /var/mcs/agent_workspace/.venv/bin/python -m pip install -e /opt/mcs/
+#RUN ls -latr /opt/mcs/
+#RUN /var/mcs/agent_workspace/.venv/bin/python -m pip install -e /opt/mcs/
 #COPY ./api/bootup.sh /opt/mcs/api/bootup.sh
 
 # Make the bootup script executable
