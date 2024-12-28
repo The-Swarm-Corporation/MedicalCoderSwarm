@@ -51,6 +51,7 @@ set +x
 OPENAI_KEY=$(aws ssm get-parameter     --name "mcs_openai_key" | jq .Parameter.Value -r )
 export OPENAI_KEY
 echo "OPENAI_KEY=${OPENAI_KEY}" > "/var/run/mcs/secrets/env"
+echo "OPENAI_API_KEY=${OPENAI_KEY}" > "/var/run/mcs/secrets/env"
 set -x
 
 ## append new homedir
