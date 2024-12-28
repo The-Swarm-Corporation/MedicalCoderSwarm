@@ -44,4 +44,4 @@ RUN pip install loguru
 RUN pip install transformers
 
 # start the server
-CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--proxy-headers"]
+CMD ["uvicorn", "api:app", "--proxy-headers", "--log-level=debug", "--reload"]
