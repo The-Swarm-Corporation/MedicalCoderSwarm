@@ -14,7 +14,7 @@ ExecStartPre=-/usr/bin/docker stop %n
 ExecStartPre=-/usr/bin/docker rm %n
 #ExecStartPre=/usr/bin/docker pull h4ckermike/swarms-mcs:experimental `docker tag h4ckermike/swarms-mcs:experimental 916723593639.dkr.ecr.us-east-2.amazonaws.com/swarms/mcs:latest
 ExecStartPre=aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 916723593639.dkr.ecr.us-east-2.amazonaws.com && /usr/bin/docker pull 916723593639.dkr.ecr.us-east-2.amazonaws.com/swarms/mcs:latest
-ExecStart=/usr/bin/docker run -p 8000:8000 -w /var/mcs/agent_workspace/ --mount type=bind,source=/opt/mcs,target=/opt/mcs  -e WORKSPACE_DIR=/var/mcs/agent_workspace/ --rm --name %n  916723593639.dkr.ecr.us-east-2.amazonaws.com/swarms/mcs:latest /usr/bin/unbuffer /var/mcs/agent_workspace/.venv/bin/uvicorn --proxy-headers --forwarded-allow-ips='*'--workers=4 --host 0.0.0.0 --port=8000 --reload-delay=30 --app-dir /opt/mcs/api main:app
+ExecStart=/usr/bin/docker run -p 8000:8000 -w /var/mcs/agent_workspace/ --mount type=bind,source=/opt/mcs,target=/opt/mcs --env-file /var/run/mcs/secrets/env  -e WORKSPACE_DIR=/var/mcs/agent_workspace/ --rm --name %n  916723593639.dkr.ecr.us-east-2.amazonaws.com/swarms/mcs:latest /usr/bin/unbuffer /var/mcs/agent_workspace/.venv/bin/uvicorn --proxy-headers --forwarded-allow-ips='*'--workers=4 --host 0.0.0.0 --port=8000 --reload-delay=30 --app-dir /opt/mcs/api main:app
 # --network host
 # leave these logs for now because they are
 # FIXME: update cloudwatch logs
