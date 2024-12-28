@@ -230,6 +230,15 @@ def run_medical_coder_batch(batch: BatchPatientCase):
     return responses
 
 
+@app.get("/health", status_code=200)
+def health_check():
+    """
+    Health check endpoint to verify the service is running.
+    """
+    return {"status": "healthy"}
+
+
+
 @app.delete("/v1/medical-coder/patient/{patient_id}")
 def delete_patient_data(patient_id: str):
     """
