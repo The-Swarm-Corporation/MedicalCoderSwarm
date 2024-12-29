@@ -55,6 +55,7 @@ logger.add(
 def patient_id_uu():
     return str(uuid.uuid4().hex)
 
+
 class RAGAPI:
     def __init__(
         self,

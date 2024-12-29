@@ -1,57 +1,65 @@
 import os
 import sys
 import logging
-from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
+from telegram.ext import (
+    ApplicationBuilder,
+    ContextTypes,
+    CommandHandler,
+    MessageHandler,
+    filters,
+)
 from telegram import Update
-from mcs.main import medical_coder
 from dotenv import load_dotenv
 from swarm_models import OpenAIChat
 from swarms import Agent
-from typing import List, Tuple
 import re
+
 
 def clean_markdown(text: str) -> str:
     """
     Cleans markdown formatting while preserving code blocks.
-    
+
     Args:
         text: Input markdown text
-        
+
     Returns:
         Cleaned text with preserved code blocks
     """
     if not text:
         return ""
-    
+
     # Split the text by code blocks to preserve them
-    parts = re.split(r'(``````[\s\S]*?``````)', text)
-    
+    parts = re.split(r"(``````[\s\S]*?``````)", text)
+
     cleaned_parts = []
     for i, part in enumerate(parts):
         # If this is a code block (odd indices after split), preserve it
         if i % 2 == 1:
             cleaned_parts.append(part)
             continue
-            
+
         # Clean non-code parts
         cleaned = part
-        
+
         # Remove hashtags from headers while keeping the text
-        cleaned = re.sub(r'^#+ (.+)$', r'\1', cleaned, flags=re.MULTILINE)
-        
+        cleaned = re.sub(
+            r"^#+ (.+)$", r"\1", cleaned, flags=re.MULTILINE
+        )
+
         # Remove asterisks for bold/italic
-        cleaned = re.sub(r'\*\*(.+?)\*\*', r'\1', cleaned)  # Bold
-        cleaned = re.sub(r'\*(.+?)\*', r'\1', cleaned)      # Italic
-        
+        cleaned = re.sub(r"\*\*(.+?)\*\*", r"\1", cleaned)  # Bold
+        cleaned = re.sub(r"\*(.+?)\*", r"\1", cleaned)  # Italic
+
         # Clean up extra whitespace
-        cleaned = re.sub(r'\n{3,}', '\n\n', cleaned)
+        cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
         cleaned = cleaned.strip()
-        
+
         cleaned_parts.append(cleaned)
-    
+
     # Join all parts back together
-    result = ''.join(cleaned_parts)
+    result = "".join(cleaned_parts)
     return result
+
 
 # Load environment variables
 load_dotenv()
@@ -59,8 +67,8 @@ load_dotenv()
 # Set up logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[logging.StreamHandler()]
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()],
 )
 logger = logging.getLogger(__name__)
 
@@ -130,7 +138,9 @@ def check_mention(update: Update) -> bool:
     if message.entities:
         for entity in message.entities:
             if entity.type == "mention":
-                mention = message.text[entity.offset:entity.offset + entity.length]
+                mention = message.text[
+                    entity.offset : entity.offset + entity.length
+                ]
                 if mention.lower() == f"@{bot_username.lower()}":
                     return True
 
@@ -138,24 +148,29 @@ def check_mention(update: Update) -> bool:
     if message.entities:
         for entity in message.entities:
             if entity.type == "text_mention" and entity.user.is_bot:
-                if entity.user.username.lower() == bot_username.lower():
+                if (
+                    entity.user.username.lower()
+                    == bot_username.lower()
+                ):
                     return True
 
     return False
+
 
 async def process_message(update: Update) -> str:
     """Clean up message by removing bot mention"""
     message = update.message.text
     bot_username = update.get_bot().username
-    
+
     # Remove @username
     cleaned_message = message.replace(f"@{bot_username}", "").strip()
-    
+
     # If the message starts with the bot's username without @, remove it too
     if cleaned_message.lower().startswith(bot_username.lower()):
-        cleaned_message = cleaned_message[len(bot_username):].strip()
-    
+        cleaned_message = cleaned_message[len(bot_username) :].strip()
+
     return cleaned_message
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /start command - only works in DMs"""
@@ -165,6 +180,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     welcome_message = "👋 Hello! I am your personal swarms agent. I'm at your service, how can I be of service."
     await update.message.reply_text(welcome_message)
     logger.info(f"Start command from user {update.effective_user.id}")
+
 
 async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /help command - only works in DMs"""
@@ -181,14 +197,21 @@ async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(help_message)
     logger.info(f"Help command from user {update.effective_user.id}")
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+async def handle_message(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+):
     """Handle incoming messages - works in DMs and when mentioned in groups"""
     # Check if it's a DM or mention
-    if update.message.chat.type != "private" and not check_mention(update):
+    if update.message.chat.type != "private" and not check_mention(
+        update
+    ):
         return
 
     user_id = update.effective_user.id
-    logger.info(f"Message received from {user_id} in {update.message.chat.type} chat")
+    logger.info(
+        f"Message received from {user_id} in {update.message.chat.type} chat"
+    )
 
     try:
         # Clean up the message
@@ -200,22 +223,27 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # response = medical_coder.run(cleaned_message + "Respond with a cute girly vibe as if you were a waifu extremely happy  and concerned about the user" + "Respond in the language of the user's request")
         response = agent.run(cleaned_message)
         response = clean_markdown(response)
-        
+
         # Send response
         await update.message.reply_text(response)
         logger.info(f"Sent response to user {user_id}")
 
     except Exception as e:
-        logger.error(f"Error processing message: {str(e)}", exc_info=True)
+        logger.error(
+            f"Error processing message: {str(e)}", exc_info=True
+        )
         await update.message.reply_text(
             "Sorry, I encountered an error while processing your request. Please try again."
         )
 
+
 def main():
     # Get token from environment variable
-    token = os.getenv('TELEGRAM_SWARMS_KEY')
+    token = os.getenv("TELEGRAM_SWARMS_KEY")
     if not token:
-        logger.error("TELEGRAM_KEY not found in environment variables")
+        logger.error(
+            "TELEGRAM_KEY not found in environment variables"
+        )
         sys.exit(1)
 
     try:
@@ -225,10 +253,11 @@ def main():
         # Add handlers
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("help", help))
-        application.add_handler(MessageHandler(
-            filters.TEXT & ~filters.COMMAND,
-            handle_message
-        ))
+        application.add_handler(
+            MessageHandler(
+                filters.TEXT & ~filters.COMMAND, handle_message
+            )
+        )
 
         # Run the bot
         logger.info("Bot started successfully")
@@ -238,7 +267,8 @@ def main():
         logger.error(f"Critical error: {str(e)}", exc_info=True)
         sys.exit(1)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     try:
         logger.info("Starting bot application")
         main()
