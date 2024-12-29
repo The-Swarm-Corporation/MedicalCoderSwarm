@@ -24,6 +24,7 @@ import json
 import os
 from datetime import datetime, timedelta
 from typing import Any, Callable, Dict, List
+import uuid
 
 from fastapi import requests
 from loguru import logger
@@ -50,6 +51,9 @@ logger.add(
     rotation="10 MB",
 )
 
+
+def patient_id_uu():
+    return str(uuid.uuid4().hex)
 
 class RAGAPI:
     def __init__(
@@ -182,6 +186,7 @@ medical_coder = Agent(
     llm=model,
     max_loops=1,
     dynamic_temperature_enabled=True,
+    streaming_on=True,
 )
 
 synthesizer = Agent(
@@ -344,6 +349,7 @@ class MedicalCoderSwarm:
         self.key_storage_path = key_storage_path
         self.summarization = summarization
         self.agent_outputs = []
+        self.patient_id = patient_id_uu()
 
         self.diagnosis_system = AgentRearrange(
             name="Medical-coding-diagnosis-swarm",

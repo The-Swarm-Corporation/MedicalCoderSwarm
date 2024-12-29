@@ -53,102 +53,102 @@ cursor.execute(
     """
 )
 # Create api_keys table if it doesn't exist
-cursor.execute(
-    """
-    CREATE TABLE IF NOT EXISTS api_keys (
-        key TEXT PRIMARY KEY,
-        created_at TEXT,
-        last_reset TEXT,
-        requests_remaining INTEGER DEFAULT 1000
-    )
-    """
-)
+# cursor.execute(
+#     """
+#     CREATE TABLE IF NOT EXISTS api_keys (
+#         key TEXT PRIMARY KEY,
+#         created_at TEXT,
+#         last_reset TEXT,
+#         requests_remaining INTEGER DEFAULT 1000
+#     )
+#     """
+# )
 
 connection.commit()
 connection.close()
 
-def generate_api_key():
-    """Generate a new API key and store it in the database."""
-    key = secrets.token_hex(32)  # Generate a secure, random 64-character hex key
-    now = datetime.utcnow().isoformat()
-    try:
-        connection = sqlite3.connect(db_path)
-        cursor = connection.cursor()
-        cursor.execute(
-            "INSERT INTO api_keys (key, created_at, last_reset, requests_remaining) VALUES (?, ?, ?, ?)",
-            (key, now, now, 1000),
-        )
-        connection.commit()
-        connection.close()
-    except sqlite3.Error as e:
-        logger.error(f"Error generating API key: {e}")
-        raise HTTPException(status_code=500, detail="Failed to generate API key")
-    return key
+# def generate_api_key():
+#     """Generate a new API key and store it in the database."""
+#     key = secrets.token_hex(32)  # Generate a secure, random 64-character hex key
+#     now = datetime.utcnow().isoformat()
+#     try:
+#         connection = sqlite3.connect(db_path)
+#         cursor = connection.cursor()
+#         cursor.execute(
+#             "INSERT INTO api_keys (key, created_at, last_reset, requests_remaining) VALUES (?, ?, ?, ?)",
+#             (key, now, now, 1000),
+#         )
+#         connection.commit()
+#         connection.close()
+#     except sqlite3.Error as e:
+#         logger.error(f"Error generating API key: {e}")
+#         raise HTTPException(status_code=500, detail="Failed to generate API key")
+#     return key
 
 
-def validate_api_key(api_key: str = Header(...)):
-    """Validate the API key and enforce rate limiting."""
-    try:
-        connection = sqlite3.connect(db_path)
-        cursor = connection.cursor()
+# def validate_api_key(api_key: str = Header(...)):
+#     """Validate the API key and enforce rate limiting."""
+#     try:
+#         connection = sqlite3.connect(db_path)
+#         cursor = connection.cursor()
 
-        # Fetch API key details
-        cursor.execute(
-            "SELECT requests_remaining, last_reset FROM api_keys WHERE key = ?",
-            (api_key,),
-        )
-        row = cursor.fetchone()
+#         # Fetch API key details
+#         cursor.execute(
+#             "SELECT requests_remaining, last_reset FROM api_keys WHERE key = ?",
+#             (api_key,),
+#         )
+#         row = cursor.fetchone()
 
-        if not row:
-            raise HTTPException(status_code=401, detail="Invalid API key")
+#         if not row:
+#             raise HTTPException(status_code=401, detail="Invalid API key")
 
-        requests_remaining, last_reset = row
-        now = datetime.utcnow()
+#         requests_remaining, last_reset = row
+#         now = datetime.utcnow()
 
-        # Reset daily quota if it's a new day
-        last_reset_time = datetime.fromisoformat(last_reset)
-        if now.date() > last_reset_time.date():
-            requests_remaining = 1000
-            last_reset = now.isoformat()
-            cursor.execute(
-                "UPDATE api_keys SET requests_remaining = ?, last_reset = ? WHERE key = ?",
-                (requests_remaining, last_reset, api_key),
-            )
+#         # Reset daily quota if it's a new day
+#         last_reset_time = datetime.fromisoformat(last_reset)
+#         if now.date() > last_reset_time.date():
+#             requests_remaining = 1000
+#             last_reset = now.isoformat()
+#             cursor.execute(
+#                 "UPDATE api_keys SET requests_remaining = ?, last_reset = ? WHERE key = ?",
+#                 (requests_remaining, last_reset, api_key),
+#             )
 
-        # Check quota
-        if requests_remaining <= 0:
-            raise HTTPException(status_code=429, detail="Rate limit exceeded")
+#         # Check quota
+#         if requests_remaining <= 0:
+#             raise HTTPException(status_code=429, detail="Rate limit exceeded")
 
-        # Deduct a request
-        cursor.execute(
-            "UPDATE api_keys SET requests_remaining = requests_remaining - 1 WHERE key = ?",
-            (api_key,),
-        )
-        connection.commit()
-    except sqlite3.Error as e:
-        logger.error(f"Error validating API key: {e}")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
-    finally:
-        if connection:
-            connection.close()
-
-
-@app.post("/v1/generate-key")
-def create_api_key():
-    """Endpoint to create a new API key."""
-    api_key = generate_api_key()
-    return {"api_key": api_key}
+#         # Deduct a request
+#         cursor.execute(
+#             "UPDATE api_keys SET requests_remaining = requests_remaining - 1 WHERE key = ?",
+#             (api_key,),
+#         )
+#         connection.commit()
+#     except sqlite3.Error as e:
+#         logger.error(f"Error validating API key: {e}")
+#         raise HTTPException(status_code=500, detail="Internal Server Error")
+#     finally:
+#         if connection:
+#             connection.close()
 
 
-@app.get("/v1/validate-key")
-def check_key(api_key: str = Depends(validate_api_key)):
-    """Validate API key and return success if valid."""
-    return {"status": "API key is valid"}
+# @app.post("/v1/generate-key")
+# def create_api_key():
+#     """Endpoint to create a new API key."""
+#     api_key = generate_api_key()
+#     return {"api_key": api_key}
 
 
-# Dependency to validate API key
-def get_api_key_dependency(api_key: str = Depends(validate_api_key)):
-    return api_key
+# @app.get("/v1/validate-key")
+# def check_key(api_key: str = Depends(validate_api_key)):
+#     """Validate API key and return success if valid."""
+#     return {"status": "API key is valid"}
+
+
+# # Dependency to validate API key
+# def get_api_key_dependency(api_key: str = Depends(validate_api_key)):
+#     return api_key
 
 
 # Pydantic models
@@ -213,7 +213,6 @@ async def general_exception_handler(request, exc):
 @app.post("/v1/medical-coder/run", response_model=QueryResponse)
 def run_medical_coder(
     patient_case: PatientCase,
-    api_key: str = Depends(get_api_key_dependency),
 ):
     """
     Run the MedicalCoderSwarm on a given patient case.
@@ -258,7 +257,7 @@ def run_medical_coder(
     response_model=QueryResponse,
 )
 def get_patient_data(
-    patient_id: str, api_key: str = Depends(get_api_key_dependency)
+    patient_id: str, 
 ):
     """
     Retrieve patient data by patient ID.
@@ -290,7 +289,7 @@ def get_patient_data(
 @app.get(
     "/v1/medical-coder/patients", response_model=QueryAllResponse
 )
-def get_all_patients(api_key: str = Depends(get_api_key_dependency)):
+def get_all_patients():
     """
     Retrieve all patient data.
     """
@@ -322,7 +321,6 @@ def get_all_patients(api_key: str = Depends(get_api_key_dependency)):
 )
 def run_medical_coder_batch(
     batch: BatchPatientCase,
-    api_key: str = Depends(get_api_key_dependency),
 ):
     """
     Run the MedicalCoderSwarm on a batch of patient cases.
@@ -367,7 +365,7 @@ def health_check():
 
 @app.delete("/v1/medical-coder/patient/{patient_id}")
 def delete_patient_data(
-    patient_id: str, api_key: str = Depends(get_api_key_dependency)
+    patient_id: str, 
 ):
     """
     Delete a patient's data by patient ID.
@@ -395,30 +393,30 @@ def delete_patient_data(
             connection.close()
 
 
-@app.delete("/v1/medical-coder/patients")
-def delete_all_patients(
-    api_key: str = Depends(get_api_key_dependency),
-):
-    """
-    Delete all patient data.
-    """
-    try:
-        connection = sqlite3.connect(db_path)
-        cursor = connection.cursor()
-        cursor.execute("DELETE FROM patients")
-        connection.commit()
-        connection.close()
+# @app.delete("/v1/medical-coder/patients")
+# def delete_all_patients(
+    
+#     ):
+#     """
+#     Delete all patient data.
+#     """
+#     try:
+#         connection = sqlite3.connect(db_path)
+#         cursor = connection.cursor()
+#         cursor.execute("DELETE FROM patients")
+#         connection.commit()
+#         connection.close()
 
-        return {"message": "All patient data deleted successfully"}
-    except sqlite3.Error as e:
-        logger.error(f"Failed to delete all patient data: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to delete all patient data",
-        )
-    finally:
-        if connection:
-            connection.close()
+#         return {"message": "All patient data deleted successfully"}
+#     except sqlite3.Error as e:
+#         logger.error(f"Failed to delete all patient data: {e}")
+#         raise HTTPException(
+#             status_code=500,
+#             detail="Failed to delete all patient data",
+#         )
+#     finally:
+#         if connection:
+#             connection.close()
 
 
 if __name__ == "__main__":
