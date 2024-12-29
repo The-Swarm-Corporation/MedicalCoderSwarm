@@ -530,34 +530,34 @@ def health_check():
     return {"status": "healthy"}
 
 
-@app.delete("/v1/medical-coder/patient/{patient_id}")
-def delete_patient_data(
-    patient_id: str,
-):
-    """
-    Delete a patient's data by patient ID.
-    """
-    try:
-        connection = sqlite3.connect(db_path)
-        cursor = connection.cursor()
-        cursor.execute(
-            "DELETE FROM patients WHERE patient_id = ?", (patient_id,)
-        )
-        connection.commit()
-        connection.close()
+# @app.delete("/v1/medical-coder/patient/{patient_id}")
+# def delete_patient_data(
+#     patient_id: str,
+# ):
+#     """
+#     Delete a patient's data by patient ID.
+#     """
+#     try:
+#         connection = sqlite3.connect(db_path)
+#         cursor = connection.cursor()
+#         cursor.execute(
+#             "DELETE FROM patients WHERE patient_id = ?", (patient_id,)
+#         )
+#         connection.commit()
+#         connection.close()
 
-        return {
-            "message": "Patient data deleted successfully",
-            "patient_id": patient_id,
-        }
-    except sqlite3.Error as e:
-        logger.error(f"Failed to delete patient data: {e}")
-        raise HTTPException(
-            status_code=500, detail="Failed to delete patient data"
-        )
-    finally:
-        if connection:
-            connection.close()
+#         return {
+#             "message": "Patient data deleted successfully",
+#             "patient_id": patient_id,
+#         }
+#     except sqlite3.Error as e:
+#         logger.error(f"Failed to delete patient data: {e}")
+#         raise HTTPException(
+#             status_code=500, detail="Failed to delete patient data"
+#         )
+#     finally:
+#         if connection:
+#             connection.close()
 
 
 # @app.delete("/v1/medical-coder/patients")

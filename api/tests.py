@@ -1,189 +1,214 @@
-import time
-from typing import Dict, Optional, Tuple
-
+import json
 import requests
 from loguru import logger
 
-# Global variables
-BASE_URL = "https://mcs-285321057562.us-central1.run.app"
+# Configure logger
+logger.add("test_api.log", rotation="10 MB")
 
+BASE_URL = "https://mcs-285321057562.us-central1.run.app/"  # Update this with your actual base URL
 
-def get_headers(api_key: Optional[str] = None) -> Dict[str, str]:
-    """Generate headers for API requests"""
-    headers = {}  # Start with empty headers
-    if api_key:
-        # FastAPI's Header dependency expects the raw header name
-        headers["api-key"] = api_key
-    return headers
-
-
-def make_request(
-    method: str,
-    url: str,
-    headers: Dict = None,
-    json: Dict = None,
-    timeout: int = 30,
-) -> requests.Response:
-    """Make HTTP request with consistent logging"""
-    try:
-        logger.debug(f"Making {method} request to {url}")
-        logger.debug(f"Headers: {headers}")
-        if json:
-            logger.debug(f"Request body: {json}")
-
-        response = requests.request(
-            method, url, headers=headers, json=json, timeout=timeout
-        )
-
-        logger.debug(f"Response status: {response.status_code}")
-        logger.debug(f"Response headers: {dict(response.headers)}")
-        logger.debug(
-            f"Response body: {response.text[:500]}"
-        )  # First 500 chars
-
-        return response
-    except Exception as e:
-        logger.error(f"Request failed: {str(e)}")
-        raise
-
-
-def setup_test_environment() -> Tuple[bool, Optional[str]]:
-    """Setup test environment and get API key"""
-    try:
-        logger.info("Setting up test environment")
-        response = make_request("POST", f"{BASE_URL}/v1/generate-key")
-        response.raise_for_status()
-        api_key = response.json()["api_key"]
-        logger.success(
-            f"Successfully generated API key: {api_key[:8]}..."
-        )
-        return True, api_key
-    except Exception as e:
-        logger.error(f"Setup failed: {str(e)}")
-        return False, None
-
-
-def test_health_check() -> bool:
+def test_health_check():
     """Test health check endpoint"""
+    logger.info("Testing health check endpoint")
     try:
-        logger.info("Testing health check endpoint")
-        response = make_request("GET", f"{BASE_URL}/health")
-        response.raise_for_status()
-        assert response.json()["status"] == "healthy"
-        logger.success("Health check test passed")
+        response = requests.get(f"{BASE_URL}/health")
+        assert response.status_code == 200
+        assert response.json() == {"status": "healthy"}
+        logger.info("Health check test passed")
         return True
     except Exception as e:
         logger.error(f"Health check test failed: {str(e)}")
         return False
 
-
-def test_api_key_validation(api_key: str) -> bool:
-    """Test API key validation"""
+def test_rate_limits():
+    """Test rate limits endpoint"""
+    logger.info("Testing rate limits endpoint")
     try:
-        logger.info("Testing API key validation")
-        headers = get_headers(api_key)
-
-        # First request - just like FastAPI's Header dependency
-        response = make_request(
-            "GET", f"{BASE_URL}/v1/validate-key", headers=headers
-        )
-        response.raise_for_status()
-        assert response.json()["status"] == "API key is valid"
-
-        logger.success("API key validation test passed")
+        response = requests.get(f"{BASE_URL}/rate-limits")
+        assert response.status_code == 200
+        data = response.json()
+        assert "daily_requests_remaining" in data
+        assert "hourly_requests_remaining" in data
+        logger.info("Rate limits test passed")
         return True
     except Exception as e:
-        logger.error(f"API key validation test failed: {str(e)}")
+        logger.error(f"Rate limits test failed: {str(e)}")
         return False
 
-
-def test_single_patient_flow(api_key: str) -> bool:
-    """Test complete flow for single patient"""
+def test_run_medical_coder():
+    """Test running medical coder for single patient"""
+    logger.info("Testing medical coder single patient endpoint")
     try:
-        logger.info("Testing single patient flow")
-        headers = get_headers(api_key)
-
-        patient_data = {
-            "patient_id": "TEST_001",
-            "case_description": "Patient presents with acute respiratory infection",
+        test_case = {
+            "patient_id": "test123",
+            "case_description": "Test case description for patient with chest pain and shortness of breath"
         }
-
-        # Create patient
-        create_response = make_request(
-            "POST",
-            f"{BASE_URL}/v1/medical-coder/run",
-            headers=headers,
-            json=patient_data,
-        )
-        create_response.raise_for_status()
-
-        # Get patient
-        time.sleep(2)  # Wait for processing
-        get_response = make_request(
-            "GET",
-            f"{BASE_URL}/v1/medical-coder/patient/{patient_data['patient_id']}",
-            headers=headers,
-        )
-        get_response.raise_for_status()
-
-        # Delete patient
-        delete_response = make_request(
-            "DELETE",
-            f"{BASE_URL}/v1/medical-coder/patient/{patient_data['patient_id']}",
-            headers=headers,
-        )
-        delete_response.raise_for_status()
-
-        logger.success("Single patient flow test passed")
+        response = requests.post(f"{BASE_URL}/v1/medical-coder/run", json=test_case)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["patient_id"] == "test123"
+        assert "case_data" in data
+        logger.info("Medical coder single patient test passed")
+        logger.info(f"Response data: {json.dumps(data, indent=2)}")
         return True
     except Exception as e:
-        logger.error(f"Single patient flow test failed: {str(e)}")
+        logger.error(f"Medical coder single patient test failed: {str(e)}")
         return False
 
+def test_get_patient_data():
+    """Test retrieving patient data"""
+    logger.info("Testing get patient data endpoint")
+    try:
+        # First create a test patient
+        test_case = {
+            "patient_id": "test456",
+            "case_description": "Test case for data retrieval"
+        }
+        # Create the patient first
+        create_response = requests.post(f"{BASE_URL}/v1/medical-coder/run", json=test_case)
+        assert create_response.status_code == 200
 
-def run_all_tests() -> Dict[str, bool]:
-    """Run all tests and return results"""
-    logger.info("Starting full test suite")
+        # Then retrieve the patient data
+        response = requests.get(f"{BASE_URL}/v1/medical-coder/patient/test456")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["patient_id"] == "test456"
+        logger.info("Get patient data test passed")
+        logger.info(f"Retrieved data: {json.dumps(data, indent=2)}")
+        return True
+    except Exception as e:
+        logger.error(f"Get patient data test failed: {str(e)}")
+        return False
 
-    # Setup
-    setup_success, api_key = setup_test_environment()
-    if not setup_success:
-        logger.error("Test suite setup failed")
-        return {"setup": False}
+def test_get_all_patients():
+    """Test retrieving all patients"""
+    logger.info("Testing get all patients endpoint")
+    try:
+        response = requests.get(f"{BASE_URL}/v1/medical-coder/patients")
+        assert response.status_code == 200
+        data = response.json()
+        assert "patients" in data
+        logger.info("Get all patients test passed")
+        logger.info(f"Number of patients retrieved: {len(data['patients'])}")
+        return True
+    except Exception as e:
+        logger.error(f"Get all patients test failed: {str(e)}")
+        return False
 
-    # Run critical tests first
+def test_run_medical_coder_batch():
+    """Test batch processing of patient cases"""
+    logger.info("Testing medical coder batch endpoint")
+    try:
+        test_batch = {
+            "cases": [
+                {
+                    "patient_id": "batch1", 
+                    "case_description": "Patient presents with severe migraine"
+                },
+                {
+                    "patient_id": "batch2", 
+                    "case_description": "Patient diagnosed with type 2 diabetes"
+                }
+            ]
+        }
+        response = requests.post(f"{BASE_URL}/v1/medical-coder/run-batch", json=test_batch)
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 2
+        logger.info("Medical coder batch test passed")
+        logger.info(f"Batch processing results: {json.dumps(data, indent=2)}")
+        return True
+    except Exception as e:
+        logger.error(f"Medical coder batch test failed: {str(e)}")
+        return False
+
+def test_delete_patient_data():
+    """Test deleting patient data"""
+    logger.info("Testing delete patient data endpoint")
+    try:
+        # First create a test patient
+        test_case = {
+            "patient_id": "delete_test",
+            "case_description": "Test case for deletion"
+        }
+        # Create the patient
+        create_response = requests.post(f"{BASE_URL}/v1/medical-coder/run", json=test_case)
+        assert create_response.status_code == 200
+
+        # Then delete the patient
+        response = requests.delete(f"{BASE_URL}/v1/medical-coder/patient/delete_test")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["patient_id"] == "delete_test"
+        assert data["message"] == "Patient data deleted successfully"
+        logger.info("Delete patient data test passed")
+        return True
+    except Exception as e:
+        logger.error(f"Delete patient data test failed: {str(e)}")
+        return False
+
+def run_all_tests():
+    """Run all tests and generate report"""
+    logger.info("Starting test suite execution")
+    
     test_results = {
-        "health_check": test_health_check(),
-        "api_key_validation": test_api_key_validation(api_key),
-        "single_patient_flow": test_single_patient_flow(api_key),
+        "total_tests": 7,
+        "passed": 0,
+        "failed": 0,
+        "failures": []
     }
 
-    # Log results
-    passed_tests = sum(
-        1 for result in test_results.values() if result
-    )
-    total_tests = len(test_results)
-    logger.info(
-        f"Test suite completed. Passed {passed_tests}/{total_tests} tests"
-    )
+    tests = [
+        test_health_check,
+        test_rate_limits,
+        test_run_medical_coder,
+        test_get_patient_data,
+        test_get_all_patients,
+        test_run_medical_coder_batch,
+        test_delete_patient_data
+    ]
 
-    for test_name, result in test_results.items():
-        status = "PASSED" if result else "FAILED"
-        logger.info(f"{test_name}: {status}")
+    for test in tests:
+        try:
+            if test():
+                test_results["passed"] += 1
+                logger.success(f"{test.__name__} passed")
+            else:
+                test_results["failed"] += 1
+                test_results["failures"].append({
+                    "test_name": test.__name__,
+                    "error": "Test returned False"
+                })
+        except Exception as e:
+            test_results["failed"] += 1
+            test_results["failures"].append({
+                "test_name": test.__name__,
+                "error": str(e)
+            })
+            logger.error(f"{test.__name__} failed: {str(e)}")
+    
+    # Generate report
+    success_rate = (test_results["passed"] / test_results["total_tests"]) * 100
+    
+    report = f"""
+Test Execution Report
+====================
+Total Tests: {test_results['total_tests']}
+Passed: {test_results['passed']}
+Failed: {test_results['failed']}
+Success Rate: {success_rate:.2f}%
 
-    return test_results
+Failed Tests:
+"""
+    
+    if test_results["failures"]:
+        for failure in test_results["failures"]:
+            report += f"\n- {failure['test_name']}: {failure['error']}"
+    else:
+        report += "\nNone"
 
-
-def print_test_summary(results: Dict[str, bool]):
-    """Print a formatted summary of test results"""
-    print("\nTest Results Summary:")
-    print("-" * 40)
-    for test_name, result in results.items():
-        status = "✅ PASSED" if result else "❌ FAILED"
-        print(f"{test_name}: {status}")
-    print("-" * 40)
-
+    logger.info("Test suite execution completed")
+    return report
 
 if __name__ == "__main__":
-    results = run_all_tests()
-    print_test_summary(results)
+    print(run_all_tests())
