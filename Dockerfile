@@ -30,7 +30,7 @@ COPY ./api /app
 RUN chmod +x bootup.sh
 
 # Expose the application port
-EXPOSE 8000
+EXPOSE 8080
 
 # Pip install uvicorn
 RUN pip install setuptools
