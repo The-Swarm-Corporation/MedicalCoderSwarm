@@ -28,9 +28,9 @@ jobs:
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        aws-region: ${{ secrets.AWS_REGION || "us-east-2"}}
-        role-session-name: github-actions-${{ env.APP_NAME || "swarms"}}
-        role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID || "916723593639" }}:role/github
+        aws-region: ${{ secrets.AWS_REGION || 'us-east-2'}}
+        role-session-name: github-actions-${{ env.APP_NAME || 'swarms'}}
+        role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID || '916723593639' }}:role/github
         
 #    - name: Configure AWS credentials
 #      uses: aws-actions/configure-aws-credentials@v1-node16
