@@ -279,63 +279,58 @@ docker-compose down
 # Full Diagram
 
 ```
-graph TD
-    %% Main System Components
-    MCS[Medical Coding System]
-    SEC[Security Layer]
-    RAG[RAG System]
-    SWARM[Agent Swarm]
-    LOG[Logging System]
+graph TB
+    subgraph External["External Systems"]
+        API[("FastAPI Endpoints")]
+        RAG["RAG System"]
+        SEC["Security Layer"]
+    end
+
+    subgraph Core["Core MCS"]
+        MS["MedicalCoderSwarm"]
+        AG["AgentRearrange"]
+        
+        subgraph Agents["Agent Network"]
+            CMO["Chief Medical Officer"]
+            VIR["Virologist"]
+            INT["Internist"]
+            MC["Medical Coder"]
+            SYN["Synthesizer"]
+            SUM["Summarizer"]
+        end
+        
+        subgraph Security["Security Components"]
+            SDH["SecureDataHandler"]
+            KRP["KeyRotationPolicy"]
+        end
+        
+        subgraph IO["I/O Management"]
+            LOG["Logger"]
+            FS["File System"]
+        end
+    end
+
+    %% Connections
+    API --> MS
+    MS --> AG
+    AG --> Agents
+    RAG --> MS
+    MS --> SDH
+    SDH --> KRP
+    MS --> LOG
+    MS --> FS
     
-    %% Security Components
-    SEC_HANDLER[Secure Data Handler]
-    KEY_ROT[Key Rotation Policy]
-    
-    %% Agents
-    CMO[Chief Medical Officer]
-    VIR[Virologist]
-    INT[Internist]
-    COD[Medical Coder]
-    SYN[Synthesizer]
-    SUM[Summarization Agent]
-    
-    %% Data Storage
-    REPORTS[Reports Directory]
-    LOGS[Log Files]
-    
-    %% Main System Relations
-    MCS --> SEC
-    MCS --> RAG
-    MCS --> SWARM
-    MCS --> LOG
-    
-    %% Security Flow
-    SEC --> SEC_HANDLER
-    SEC_HANDLER --> KEY_ROT
-    
-    %% Agent Swarm Structure
-    SWARM --> CMO
+    %% Agent Flow
     CMO --> VIR
     VIR --> INT
-    INT --> COD
-    COD --> SYN
+    INT --> MC
+    MC --> SYN
     SYN --> SUM
     
-    %% Data Flow
-    SWARM --> REPORTS
-    LOG --> LOGS
-    
-    %% Optional RAG Integration
-    RAG -.-> SWARM
-    
-    %% Security Features
-    SEC_HANDLER --> |Encryption| REPORTS
-    SEC_HANDLER --> |Encryption| LOGS
-    
-    class MCS,RAG,SWARM,LOG system
-    class SEC,SEC_HANDLER,KEY_ROT security
-    class CMO,VIR,INT,COD,SYN,SUM agent
-    class REPORTS,LOGS storage
+    class API,RAG,SEC external
+    class MS,AG core
+    class SDH,KRP security
+    class LOG,FS io
 
 
 ```
