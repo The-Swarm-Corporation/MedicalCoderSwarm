@@ -17,13 +17,13 @@ jobs:
     - uses: actions/checkout@v4
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
-    - name: Cache Docker layers
-      uses: actions/cache@v4
-      with:
-        path: /tmp/.buildx-cache
-        key: ${{ runner.os }}-buildx-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-buildx-
+    # - name: Cache Docker layers
+    #   uses: actions/cache/restore@v4.2.0
+    #   with:
+    #     path: /tmp/.buildx-cache
+    #     key: ${{ runner.os }}-buildx-${{ github.sha }}
+    #     #restore-keys: |
+    #     #  ${{ runner.os }}-buildx-
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
@@ -46,21 +46,21 @@ jobs:
       id: sha_short
       run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
         
-    - name: Build and push Docker images
-      uses: docker/build-push-action@v6.10.0
-      with:
-        push: true
-        tags: h4ckermike/swarms-mcs:experimental
-        cache-from: type=local,src=/tmp/.buildx-cache
-        cache-to: type=local,dest=/tmp/.buildx-cache
+    # - name: Build and push Docker images
+    #   uses: docker/build-push-action@v6.10.0
+    #   with:
+    #     push: true
+    #     tags: h4ckermike/swarms-mcs:experimental
+    #     cache-from: type=local,src=/tmp/.buildx-cache
+    #     cache-to: type=local,dest=/tmp/.buildx-cache
 
     - name: Build and push ecr
       uses: docker/build-push-action@v6.10.0
       with:
         push: true
         tags: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.sha_short.outputs.sha_short }}
-        cache-from: type=local,src=/tmp/.buildx-cache
-        cache-to: type=local,dest=/tmp/.buildx-cache
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
         provenance: false
 
 
