@@ -322,7 +322,7 @@ class MedicalCoderSwarm:
         flow: str = flow,
         patient_id: str = "001",
         max_loops: int = 1,
-        output_type: str = "final",
+        output_type: str = "all",
         output_folder_path: str = "reports",
         patient_documentation: str = None,
         agent_outputs: list = any,
@@ -408,7 +408,7 @@ class MedicalCoderSwarm:
             case_info = f"Patient Information: {self.patient_id} \n Timestamp: {datetime.now()} \n Patient Documentation {self.patient_documentation} \n Task: {task}"
 
             output = self.diagnosis_system.run(
-                case_info, img, *args, **kwargs
+                task=case_info, *args, **kwargs
             )
 
             if self.summarization is True:

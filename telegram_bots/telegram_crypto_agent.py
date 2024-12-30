@@ -1,18 +1,26 @@
-import os
-import sys
 import logging
+import os
+import re
+import sys
+
+from dotenv import load_dotenv
+from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
-    ContextTypes,
     CommandHandler,
+    ContextTypes,
     MessageHandler,
     filters,
 )
-from telegram import Update
-from dotenv import load_dotenv
-from swarm_models import OpenAIChat
-from swarms import Agent
-import re
+from telegram_bots.crypto_agent_bot import runner
+
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()],
+)
+logger = logging.getLogger(__name__)
 
 
 def clean_markdown(text: str) -> str:
@@ -61,72 +69,6 @@ def clean_markdown(text: str) -> str:
     return result
 
 
-# Load environment variables
-load_dotenv()
-
-# Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler()],
-)
-logger = logging.getLogger(__name__)
-
-model_name = "gpt-4o"
-
-model = OpenAIChat(
-    model_name=model_name,
-    max_tokens=4000,
-    openai_api_key=os.getenv("OPENAI_API_KEY"),
-)
-
-# from swarms import Agent
-
-agent = Agent(
-    agent_name="Assistant",
-    agent_description="A versatile AI assistant focused on helpful, accurate, and clear communication.",
-    system_prompt="""You are a helpful AI assistant focused on clear communication and accurate results. Your goal is to assist users with their questions and tasks while maintaining high standards of quality and reliability.
-
-    Core Principles:
-    - Provide accurate, helpful responses
-    - Communicate clearly and concisely
-    - Think through problems systematically
-    - Ask for clarification when needed
-    - Acknowledge limitations transparently
-
-    Interaction Approach:
-    - Listen carefully to understand the user's needs
-    - Break complex topics into understandable parts
-    - Provide examples when helpful
-    - Maintain a professional yet approachable tone
-    - Balance thoroughness with brevity
-
-    Problem Solving:
-    - Think through problems step by step
-    - Consider multiple approaches
-    - Explain reasoning when relevant
-    - Verify assumptions
-    - Suggest alternatives when appropriate
-
-    When handling requests:
-    - Seek clarity on ambiguous questions
-    - Provide structured, clear responses
-    - Include relevant context
-    - Cite sources when appropriate
-    - Flag potential concerns or limitations
-
-    Remember to:
-    - Stay focused on the user's goals
-    - Be direct and helpful
-    - Maintain consistency
-    - Adapt to the user's level of expertise
-    - Remain objective and balanced""",
-    model_name="openai/gpt-4o",
-    max_loops=1,
-    auto_generate_prompt=True,
-    dynamic_temperature_enabled=True,
-    max_tokens=4000,
-)
 
 
 def check_mention(update: Update) -> bool:
@@ -221,7 +163,11 @@ async def handle_message(
 
         # Process with medical coder
         # response = medical_coder.run(cleaned_message + "Respond with a cute girly vibe as if you were a waifu extremely happy  and concerned about the user" + "Respond in the language of the user's request")
-        response = agent.run(cleaned_message)
+        # response = agent.run(cleaned_message)
+        # Example query
+        response = runner.run(cleaned_message)
+        print(response)
+
         response = clean_markdown(response)
 
         # Send response
@@ -239,7 +185,7 @@ async def handle_message(
 
 def main():
     # Get token from environment variable
-    token = os.getenv("TELEGRAM_SWARMS_KEY")
+    token = os.getenv("TELEGRAM_CRYPTO_KEY")
     if not token:
         logger.error(
             "TELEGRAM_KEY not found in environment variables"
@@ -269,11 +215,5 @@ def main():
 
 
 if __name__ == "__main__":
-    try:
-        logger.info("Starting bot application")
-        main()
-    except KeyboardInterrupt:
-        logger.info("Bot stopped by user")
-    except Exception as e:
-        logger.error(f"Unhandled exception: {str(e)}", exc_info=True)
-        sys.exit(1)
+    logger.info("Starting bot application")
+    main()

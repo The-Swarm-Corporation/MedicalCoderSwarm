@@ -84,7 +84,7 @@ class MCSClient:
     def __init__(
         self,
         base_url: str = "https://mcs-285321057562.us-central1.run.app",
-        timeout: int = 30,
+        timeout: int = 500,
         max_retries: int = 3,
         logger_name: str = "mcs_client",
     ):
