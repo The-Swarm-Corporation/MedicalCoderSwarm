@@ -60,7 +60,9 @@ jobs:
       uses: docker/build-push-action@v6.10.0
       with:
         push: true
-        tags: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.sha_short.outputs.sha_short }}
+        #tags: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY || 'swarms/mcs'}}:${{ steps.sha_short.outputs.sha_short }}
+        tags: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY || 'swarms/mcs'}}:latest
+        #916723593639.dkr.ecr.us-east-2.amazonaws.com/swarms/mcs:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
         provenance: false
