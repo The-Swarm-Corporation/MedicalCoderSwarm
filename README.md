@@ -8,6 +8,10 @@ this allows flexibility of adding in https and other features in front as well a
 3. setup of docker file to run mcs (wip)
 taking existing docker packaging.
 4. bootscript to launch into docker from shell (api/rundocker.sh)
+5. setup of terraform 
+6. ecr repository
+7. github action to push to ecr
+8. permissions to allow github to push
 
 # Medical Diagnosis Swarm Architecture
 
