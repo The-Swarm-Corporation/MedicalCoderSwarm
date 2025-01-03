@@ -172,6 +172,7 @@ class PatientCase(BaseModel):
     patient_docs: Optional[str] = None
     case_description: Optional[str] = None
     summarization: Optional[bool] = False
+    rag_url: Optional[str] = None
 
 
 class QueryResponse(BaseModel):
@@ -296,18 +297,19 @@ def run_medical_coder(
             f"Running MedicalCoderSwarm for patient: {patient_case.patient_id}"
         )
         swarm = MedicalCoderSwarm(
-            patient_id = patient_case.patient_id,
-            max_loops = 1,
+            patient_id=patient_case.patient_id,
+            max_loops=1,
             output_type="all",
-            patient_documentation = patient_case.patient_docs,
-            summarization = patient_case.summarization
+            patient_documentation=patient_case.patient_docs,
+            summarization=patient_case.summarization,
+            rag_url=patient_case.rag_url,
         )
         output = swarm.run(task=patient_case.case_description)
 
         logger.info(
             f"MedicalCoderSwarm completed for patient: {patient_case.patient_id}"
         )
-        
+
         agent_outputs = {
             "patient_id": patient_case.patient_id,
             "patient_docs": patient_case.patient_docs,
@@ -328,7 +330,7 @@ def run_medical_coder(
             patient_id=patient_case.patient_id,
             case_data=json.dumps(agent_outputs),
         )
-        
+
     except Exception as error:
         logger.error(
             f"Error detected with running the medical swarm: {error}"
@@ -412,33 +414,34 @@ def run_medical_coder_batch(
     responses = []
     logger.info("Running Batched MedicalCoderSwarm")
     logger.info(f"Batch size: {len(batch.cases)}")
-    
+
     for patient_case in batch.cases:
         try:
             logger.info(
                 f"Running Batched MedicalCoderSwarm for patient: {patient_case.patient_id}"
             )
             swarm = MedicalCoderSwarm(
-                patient_id = patient_case.patient_id,
-                max_loops = 1,
+                patient_id=patient_case.patient_id,
+                max_loops=1,
                 output_type="all",
-                patient_documentation = patient_case.patient_docs,
-                summarization = patient_case.summarization
+                patient_documentation=patient_case.patient_docs,
+                summarization=patient_case.summarization,
+                rag_url=patient_case.rag_url,
             )
-            
+
             output = swarm.run(task=patient_case.case_description)
 
             logger.info(
                 f"MedicalCoderSwarm completed for patient: {patient_case.patient_id}"
             )
-            
+
             agent_outputs = {
                 "patient_id": patient_case.patient_id,
                 "patient_docs": patient_case.patient_docs,
                 "agent_outputs": output,
                 "case_data": json.dumps(swarm.to_dict()),
             }
-            
+
             save_patient_data(
                 patient_case.patient_id, json.dumps(agent_outputs)
             )
@@ -464,8 +467,6 @@ def health_check():
     Health check endpoint to verify the service is running.
     """
     return {"status": "healthy"}
-
-
 
 
 if __name__ == "__main__":

@@ -1,4 +1,3 @@
-import json
 from mcs.main import MedicalCoderSwarm
 
 if __name__ == "__main__":
@@ -15,10 +14,10 @@ if __name__ == "__main__":
     """
 
     swarm = MedicalCoderSwarm(
-      patient_id="323u29382938293829382382398",
-      max_loops=1,
-      output_type="json",
-      patient_documentation="",
+        patient_id="323u29382938293829382382398",
+        max_loops=1,
+        output_type="json",
+        patient_documentation="",
     )
 
     print(swarm.run(task=patient_case))

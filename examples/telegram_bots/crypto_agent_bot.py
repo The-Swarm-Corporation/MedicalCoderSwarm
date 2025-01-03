@@ -1,6 +1,6 @@
 import os
 import re
-from typing import Dict, List
+from typing import List
 from loguru import logger
 from swarm_models import OpenAIChat
 from swarms import Agent
@@ -10,6 +10,7 @@ from cryptoagent.prompts import CRYPTO_AGENT_SYS_PROMPT
 from dotenv import load_dotenv
 
 load_dotenv()
+
 
 class CryptoAnalysisRunner:
     def __init__(self):
@@ -21,15 +22,19 @@ class CryptoAnalysisRunner:
         # Check if API key is set
         self.api_key = os.getenv("OPENAI_API_KEY")
         if not self.api_key:
-            logger.error("OPENAI_API_KEY environment variable not set.")
-            raise EnvironmentError("OPENAI_API_KEY environment variable not set.")
+            logger.error(
+                "OPENAI_API_KEY environment variable not set."
+            )
+            raise EnvironmentError(
+                "OPENAI_API_KEY environment variable not set."
+            )
 
         # Initialize the OpenAIChat model
         logger.debug("Initializing the OpenAIChat model...")
         self.model = OpenAIChat(
             openai_api_key=self.api_key,
             model_name="gpt-4o-mini",
-            temperature=0.1
+            temperature=0.1,
         )
 
         # Initialize the input agent
@@ -51,7 +56,9 @@ class CryptoAnalysisRunner:
 
         # Initialize CryptoAgent
         logger.debug("Initializing the CryptoAgent...")
-        self.crypto_analyzer = CryptoAgent(agent=self.input_agent, autosave=True)
+        self.crypto_analyzer = CryptoAgent(
+            agent=self.input_agent, autosave=True
+        )
 
     def extract_coin_ids(self, task: str) -> List[str]:
         """
@@ -67,11 +74,15 @@ class CryptoAnalysisRunner:
         # Match words that are likely coin IDs (assumes alphanumeric words not part of common language)
         pattern = r"\b[a-zA-Z0-9]+\b"
         words = re.findall(pattern, task)
-        
+
         # A hypothetical filter: exclude common words and focus on valid coin IDs
         common_words = {"conduct", "an", "analysis", "on"}
-        coin_ids = [word.lower() for word in words if word.lower() not in common_words]
-        
+        coin_ids = [
+            word.lower()
+            for word in words
+            if word.lower() not in common_words
+        ]
+
         logger.debug(f"Extracted coin IDs: {coin_ids}")
         return coin_ids
 
@@ -89,7 +100,12 @@ class CryptoAnalysisRunner:
         logger.debug(f"Cleaning task: {task}")
         cleaned_task = task
         for coin_id in coin_ids:
-            cleaned_task = re.sub(rf"\b{coin_id}\b", "", cleaned_task, flags=re.IGNORECASE).strip()
+            cleaned_task = re.sub(
+                rf"\b{coin_id}\b",
+                "",
+                cleaned_task,
+                flags=re.IGNORECASE,
+            ).strip()
         logger.debug(f"Cleaned task: {cleaned_task}")
         return cleaned_task
 
@@ -113,7 +129,9 @@ class CryptoAnalysisRunner:
         coin_ids = self.extract_coin_ids(task)
         if not coin_ids:
             logger.error("No coin IDs found in the task.")
-            raise ValueError("The task must include at least one coin ID.")
+            raise ValueError(
+                "The task must include at least one coin ID."
+            )
 
         # Clean the task by removing coin IDs
         cleaned_task = self.clean_task(task, coin_ids)
@@ -124,14 +142,13 @@ class CryptoAnalysisRunner:
             logger.info(f"Analyzing coin: {coin_id}")
             # Pass the cleaned task and the single coin ID to the CryptoAgent
             summary = self.crypto_analyzer.run(
-                [coin_id],
-                cleaned_task
+                [coin_id], cleaned_task
             )
             results.append(summary)
-            
+
         response = concat_strings(results)
         print(response)
-        
+
         return response
 
 

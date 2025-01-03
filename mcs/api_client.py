@@ -1,5 +1,4 @@
-from typing import List, Dict, Any
-from dataclasses import dataclass
+from typing import List, Dict, Any, Optional
 from datetime import datetime
 import requests
 from requests.adapters import HTTPAdapter
@@ -11,10 +10,11 @@ from tenacity import (
     wait_exponential,
     retry_if_exception_type,
 )
+from mcs.main import patient_id_uu
+from pydantic import BaseModel
 
 
-@dataclass
-class PatientCase:
+class PatientCase(BaseModel):
     """
     Represents a patient case to be processed by the Medical Coder Swarm.
 
@@ -23,12 +23,16 @@ class PatientCase:
         case_description (str): Detailed medical case description
     """
 
-    patient_id: str
-    case_description: str
+    patient_id: Optional[str]
+    case_description: Optional[str]
+    patient_docs: Optional[str]
+    summarization: Optional[bool]
+
+    class Config:
+        arbitrary_types_allowed = True
 
 
-@dataclass
-class QueryResponse:
+class QueryResponse(BaseModel):
     """
     Response from the Medical Coder Swarm API for a single patient case.
 
@@ -38,7 +42,10 @@ class QueryResponse:
     """
 
     patient_id: str
-    case_data: str
+    case_data: Dict[str, any]
+
+    class Config:
+        arbitrary_types_allowed = True
 
 
 class MCSClientError(Exception):
@@ -168,7 +175,11 @@ class MCSClient:
         ),
     )
     def run_medical_coder(
-        self, patient_id: str, case_description: str
+        self,
+        patient_id: str = patient_id_uu(),
+        case_description: str = None,
+        summarization: bool = True,
+        patient_docs: str = None,
     ) -> QueryResponse:
         """
         Process a single patient case through the Medical Coder Swarm.
@@ -186,7 +197,10 @@ class MCSClient:
         logger.info(f"Processing case for patient: {patient_id}")
 
         payload = PatientCase(
-            patient_id=patient_id, case_description=case_description
+            patient_id=patient_id,
+            case_description=case_description,
+            summarization=summarization,
+            patient_docs=patient_docs,
         ).__dict__
 
         try:
@@ -195,8 +209,10 @@ class MCSClient:
                 json=payload,
                 timeout=self.timeout,
             )
-            data = self._handle_response(response)
-            return QueryResponse(**data)
+
+            # data = self._handle_response(response)
+            # return QueryResponse(**data)
+            return response.json()
         except Exception as e:
             logger.error(
                 f"Error processing case for patient {patient_id}: {str(e)}"

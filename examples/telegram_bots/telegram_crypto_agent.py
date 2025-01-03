@@ -3,7 +3,6 @@ import os
 import re
 import sys
 
-from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
@@ -67,8 +66,6 @@ def clean_markdown(text: str) -> str:
     # Join all parts back together
     result = "".join(cleaned_parts)
     return result
-
-
 
 
 def check_mention(update: Update) -> bool:

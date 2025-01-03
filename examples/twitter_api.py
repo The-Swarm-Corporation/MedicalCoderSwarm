@@ -92,7 +92,7 @@ class TwitterBot:
     async def send_dm(self, user_id: str, message: str):
         """Send a direct message."""
         try:
-            response = self.client.create_direct_message(
+            self.client.create_direct_message(
                 participant_id=user_id, text=message
             )
             logger.info(f"DM sent to user {user_id}")

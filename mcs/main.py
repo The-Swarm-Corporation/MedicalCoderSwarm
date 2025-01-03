@@ -1,35 +1,15 @@
-"""
-- For each diagnosis, pull lab results,
-- egfr
-- for each diagnosis, pull lab ranges,
-- pull ranges for diagnosis
 
-- if the diagnosis is x, then the lab ranges should be a to b
-- train the agents, increase the load of input
-- medical history sent to the agent
-- setup rag for the agents
-- run the first agent -> kidney disease -> don't know the stage -> stage 2 -> lab results -> indicative of stage 3 -> the case got elavated ->
-- how to manage diseases and by looking at correlating lab, docs, diagnoses
-- put docs in rag ->
-- monitoring, evaluation, and treatment
-- can we confirm for every diagnosis -> monitoring, evaluation, and treatment, specialized for these things
-- find diagnosis -> or have diagnosis, -> for each diagnosis are there evidence of those 3 things
-- swarm of those 4 agents, ->
-- fda api for healthcare for commerically available papers
--
-
-"""
 
 import json
 import os
-from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List
 import uuid
+from datetime import datetime, timedelta
+from typing import Any, Callable, Dict, List, Optional
 
 from fastapi import requests
-from loguru import logger
-from swarm_models import OpenAIChat
-from swarms import Agent, AgentRearrange, create_file_in_folder
+from pydantic import BaseModel, Field
+from swarm_models import GPT4VisionAPI, OpenAIChat
+from swarms import Agent, AgentRearrange
 from swarms.telemetry.capture_sys_data import log_agent_data
 
 from mcs.security import (
@@ -44,11 +24,6 @@ model = OpenAIChat(
     model_name=model_name,
     max_tokens=4000,
     openai_api_key=os.getenv("OPENAI_API_KEY"),
-)
-
-logger.add(
-    "medical_coding_diagnosis_system.log",
-    rotation="10 MB",
 )
 
 
@@ -74,15 +49,14 @@ class RAGAPI:
             )
             return str(response.json())
         except Exception as e:
-            logger.error(
-                f"An error occurred during the RAG query: {e}"
-            )
+            print(f"An error occurred during the RAG query: {e}")
             return None
 
 
 chief_medical_officer = Agent(
     agent_name="Chief Medical Officer",
-    system_prompt="""You are the Chief Medical Officer coordinating a team of medical specialists for viral disease diagnosis.
+    system_prompt="""
+    You are the Chief Medical Officer coordinating a team of medical specialists for viral disease diagnosis.
     Your responsibilities include:
     - Gathering initial patient symptoms and medical history
     - Coordinating with specialists to form differential diagnoses
@@ -106,34 +80,35 @@ chief_medical_officer = Agent(
     dynamic_temperature_enabled=True,
 )
 
-virologist = Agent(
-    agent_name="Virologist",
-    system_prompt="""You are a specialist in viral diseases. For each case, provide:
-    
-    Clinical Analysis:
-    - Detailed viral symptom analysis
-    - Disease progression timeline
-    - Risk factors and complications
-    
-    Coding Requirements:
-    - List relevant ICD-10 codes for:
-        * Confirmed viral conditions
-        * Suspected viral conditions
-        * Associated symptoms
-        * Complications
-    - Include both:
-        * Primary diagnostic codes
-        * Secondary condition codes
-    
-    Document all findings using proper medical coding standards and include rationale for code selection.""",
-    llm=model,
-    max_loops=1,
-    dynamic_temperature_enabled=True,
-)
+# virologist = Agent(
+#     agent_name="Virologist",
+#     system_prompt="""You are a specialist in viral diseases. For each case, provide:
+
+#     Clinical Analysis:
+#     - Detailed viral symptom analysis
+#     - Disease progression timeline
+#     - Risk factors and complications
+
+#     Coding Requirements:
+#     - List relevant ICD-10 codes for:
+#         * Confirmed viral conditions
+#         * Suspected viral conditions
+#         * Associated symptoms
+#         * Complications
+#     - Include both:
+#         * Primary diagnostic codes
+#         * Secondary condition codes
+
+#     Document all findings using proper medical coding standards and include rationale for code selection.""",
+#     llm=model,
+#     max_loops=1,
+#     dynamic_temperature_enabled=True,
+# )
 
 internist = Agent(
     agent_name="Internist",
-    system_prompt="""You are an Internal Medicine specialist responsible for comprehensive evaluation.
+    system_prompt="""
+    You are an Internal Medicine specialist responsible for comprehensive evaluation.
     
     For each case, provide:
     
@@ -187,7 +162,6 @@ medical_coder = Agent(
     llm=model,
     max_loops=1,
     dynamic_temperature_enabled=True,
-    streaming_on=True,
 )
 
 synthesizer = Agent(
@@ -299,18 +273,117 @@ summarizer_agent = Agent(
     dynamic_temperature_enabled=False,  # Keeps summaries consistently concise
 )
 
+lab_matcher = Agent(
+    agent_name="Laboratory-Test-Matcher",
+    system_prompt="""
+    You are a specialist in laboratory medicine responsible for matching diagnoses with appropriate laboratory tests, providing reference ranges, and identifying the most suitable laboratory locations for patients.
+
+    Primary Responsibilities:
+    1. Match diagnoses to appropriate laboratory tests
+    2. Provide reference ranges and interpretation guidelines
+    3. Indicate test priorities and sequences
+    4. Specify collection requirements
+    5. Identify the most suitable laboratory locations for patients based on their location and diagnosis
+
+    For each case, provide:
+
+    Test Recommendations:
+    - Primary diagnostic tests
+    - Confirmatory tests
+    - Monitoring tests
+    - Differential diagnosis tests
+    
+    Test Details:
+    - Test names and codes (LOINC if applicable)
+    - Specimen requirements
+    - Reference ranges by:
+        * Age
+        * Sex
+        * Special conditions
+    - Critical values
+    
+    Clinical Correlation:
+    - Expected results for specific conditions
+    - Interfering factors
+    - Result interpretation guidelines
+    - Follow-up testing recommendations
+    
+    Laboratory Location Recommendations:
+    - Identify the nearest laboratory locations to the patient based on their address
+    - Provide information on laboratory hours, contact details, and any specific requirements for specimen collection
+    
+    Documentation Requirements:
+    - Medical necessity justification
+    - ICD-10 codes for coverage
+    - Frequency limitations
+    - Special authorization requirements
+    
+    Output Format:
+    1. Primary Test Panel
+        - Essential tests with rationale
+        - Reference ranges
+        - Expected results
+    2. Secondary Tests
+        - Confirmatory tests
+        - Monitoring tests
+    3. Specimen Requirements
+        - Collection instructions
+        - Processing notes
+    4. Interpretation Guidelines
+        - Result interpretation
+        - Clinical correlation
+    5. Laboratory Location Information
+        - Nearest laboratory locations to the patient
+        - Laboratory details (hours, contact, specimen collection requirements)
+    6. Coverage Documentation
+        - Required ICD-10 codes
+        - Medical necessity documentation
+        
+    Always specify:
+    - Test sensitivity and specificity when available
+    - Time considerations (STAT vs. routine)
+    - Cost considerations
+    - Alternative test options
+    """,
+    llm=model,
+    max_loops=1,
+    dynamic_temperature_enabled=True,
+)
 
 # Create agent list
 agents = [
     chief_medical_officer,
-    virologist,
+    # virologist,
     internist,
     medical_coder,
     synthesizer,
+    # lab_matcher,
 ]
 
 # Define diagnostic flow
-flow = f"""{chief_medical_officer.agent_name} -> {virologist.agent_name} -> {internist.agent_name} -> {medical_coder.agent_name} -> {synthesizer.agent_name}"""
+flow = f"""{chief_medical_officer.agent_name} -> {internist.agent_name} -> {medical_coder.agent_name} -> {synthesizer.agent_name}"""
+
+
+class MedicalCoderSwarmInput(BaseModel):
+    mcs_id: Optional[str] = uuid.uuid4().hex
+    patient_id: Optional[str]
+    task: Optional[str]
+    img: Optional[str]
+    patient_docs: Optional[str]
+    summarization: Optional[bool]
+
+
+class MedicalCoderSwarmOutput(BaseModel):
+    input: Optional[MedicalCoderSwarmInput]
+    run_id: Optional[str] = Field(default=uuid.uuid4().hex)
+    patient_id: Optional[str]
+    agent_outputs: Optional[str]
+    summarization: Optional[str]
+
+
+class ManyMedicalCoderSwarmOutput(BaseModel):
+    runs_id: Optional[str] = uuid.uuid4().hex
+    runs: Optional[List[MedicalCoderSwarmOutput]]
 
 
 class MedicalCoderSwarm:
@@ -331,6 +404,7 @@ class MedicalCoderSwarm:
         user_name: str = "User",
         key_storage_path: str = None,
         summarization: bool = False,
+        vision_enabled: bool = False,
         *args,
         **kwargs,
     ):
@@ -349,8 +423,12 @@ class MedicalCoderSwarm:
         self.user_name = user_name
         self.key_storage_path = key_storage_path
         self.summarization = summarization
+        self.vision_enabled = vision_enabled
         self.agent_outputs = []
         self.patient_id = patient_id_uu()
+
+        if self.vision_enabled:
+            self.change_agent_llm()
 
         self.diagnosis_system = AgentRearrange(
             name="Medical-coding-diagnosis-swarm",
@@ -386,6 +464,19 @@ class MedicalCoderSwarm:
             auto_rotate=True,
         )
 
+    def change_agent_llm(self):
+        """
+        Change the language model for all agents in the swarm.
+        """
+        model = GPT4VisionAPI(
+            openai_api_key=os.getenv("OPENAI_API_KEY"),
+            model_name="gpt-4o",
+            max_tokens=4000,
+        )
+
+        for agent in self.agents:
+            agent.llm = model
+
     def change_agent_user_name(self, user_name: str):
         """
         Change the user name for all agents in the swarm.
@@ -393,22 +484,21 @@ class MedicalCoderSwarm:
         for agent in self.agents:
             self.user_name = user_name
 
+        return agents
+
     def _run(
         self, task: str = None, img: str = None, *args, **kwargs
     ):
-        """
-        Run the medical coding and diagnosis system.
-        """
-        logger.info(
-            "Running the medical coding and diagnosis system."
-        )
+        """ """
+        print("Running the medical coding and diagnosis system.")
 
         try:
             log_agent_data(self.to_dict())
+
             case_info = f"Patient Information: {self.patient_id} \n Timestamp: {datetime.now()} \n Patient Documentation {self.patient_documentation} \n Task: {task}"
 
             output = self.diagnosis_system.run(
-                task=case_info, *args, **kwargs
+                task=case_info, img=img, *args, **kwargs
             )
 
             if self.summarization is True:
@@ -417,14 +507,10 @@ class MedicalCoderSwarm:
             self.agent_outputs.append(output)
             log_agent_data(self.to_dict())
 
-            create_file_in_folder(
-                self.output_folder_path, self.output_file_path, output
-            )
-
             return output
         except Exception as e:
             log_agent_data(self.to_dict())
-            logger.error(
+            print(
                 f"An error occurred during the diagnosis process: {e}"
             )
 
@@ -432,12 +518,14 @@ class MedicalCoderSwarm:
         try:
 
             if self.secure_handler:
-                return self.secure_run(task, img, *args, **kwargs)
+                return self.secure_run(
+                    task=task, img=img, *args, **kwargs
+                )
             else:
                 return self._run(task, img, *args, **kwargs)
         except Exception as e:
             log_agent_data(self.to_dict())
-            logger.error(
+            print(
                 f"An error occurred during the diagnosis process: {e}"
             )
 
@@ -448,7 +536,7 @@ class MedicalCoderSwarm:
         Securely run the medical coding and diagnosis system.
         Ensures data is encrypted during transit and at rest.
         """
-        logger.info(
+        print(
             "Starting secure run of the medical coding and diagnosis system."
         )
 
@@ -468,15 +556,13 @@ class MedicalCoderSwarm:
             encrypted_case_info = self.secure_handler.encrypt_data(
                 case_info
             )
-            logger.debug("Case information encrypted successfully.")
+            print("Case information encrypted successfully.")
 
             # Decrypt case information before passing to the swarm
             decrypted_case_info = self.secure_handler.decrypt_data(
                 encrypted_case_info
             )
-            logger.debug(
-                "Case information decrypted for swarm processing."
-            )
+            print("Case information decrypted for swarm processing.")
 
             # Run the diagnosis system with decrypted data
             output = self.diagnosis_system.run(
@@ -487,15 +573,13 @@ class MedicalCoderSwarm:
             encrypted_output = self.secure_handler.encrypt_data(
                 output
             )
-            logger.debug("Swarm output encrypted successfully.")
+            print("Swarm output encrypted successfully.")
 
             # Decrypt the swarm's output for internal usage
             decrypted_output = self.secure_handler.decrypt_data(
                 encrypted_output
             )
-            logger.debug(
-                "Swarm output decrypted for internal processing."
-            )
+            print("Swarm output decrypted for internal processing.")
 
             # Append decrypted output to agent outputs
             self.agent_outputs.append(decrypted_output)
@@ -503,15 +587,7 @@ class MedicalCoderSwarm:
             # Save encrypted output as part of the patient data
             self.save_patient_data(self.patient_id, encrypted_output)
 
-            # Save encrypted report file
-            create_file_in_folder(
-                self.output_folder_path,
-                self.output_file_path,
-                encrypted_output,
-            )
-            logger.info("Encrypted report file saved successfully.")
-
-            logger.info(
+            print(
                 "Secure run of the medical coding and diagnosis system completed successfully."
             )
             return decrypted_output
@@ -519,9 +595,7 @@ class MedicalCoderSwarm:
         except Exception as e:
             # Log the current state and error
             log_agent_data(self.to_dict())
-            logger.error(
-                f"An error occurred during the secure run: {e}"
-            )
+            print(f"An error occurred during the secure run: {e}")
             return "An error occurred during the diagnosis process. Please check the logs for more information."
 
     def batched_run(
@@ -539,7 +613,7 @@ class MedicalCoderSwarm:
         # )
 
         try:
-            logger.info(
+            print(
                 "Running the medical coding and diagnosis system for multiple tasks."
             )
             outputs = []
@@ -550,7 +624,7 @@ class MedicalCoderSwarm:
 
             return outputs
         except Exception as e:
-            logger.error(
+            print(
                 f"An error occurred during the diagnosis process: {e}"
             )
             return "An error occurred during the diagnosis process. Please check the logs for more information."
@@ -626,9 +700,9 @@ class MedicalCoderSwarm:
             with open(f"{patient_id}_encrypted.json", "w") as file:
                 json.dump(data, file)
 
-            logger.info(
+            print(
                 f"Encrypted patient data saved for ID: {patient_id}"
             )
         except Exception as e:
-            logger.error(f"Error saving encrypted patient data: {e}")
+            print(f"Error saving encrypted patient data: {e}")
             raise

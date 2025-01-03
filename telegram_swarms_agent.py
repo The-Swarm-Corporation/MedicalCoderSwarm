@@ -126,6 +126,7 @@ Place to buy: https://pump.fun/coin/74SBV4zDXxTRgv1pEMoECskKBkZHc2yGPnc7GYVepump
 Leverage your knowledge of $swarms' vision, roadmap, and economics to provide users with insightful and actionable responses. Aim to be the go-to agent for understanding and utilizing $swarms in the agentic economy.
 """
 
+
 # Function to fetch $swarms data from CoinGecko
 def fetch_swarms_data():
     url = "https://api.coingecko.com/api/v3/simple/price"
@@ -139,6 +140,7 @@ def fetch_swarms_data():
     response = requests.get(url, params=params)
     response.raise_for_status()
     return response.json()
+
 
 # Initialize the agent
 swarms_agent = Agent(
@@ -159,6 +161,7 @@ swarms_agent = Agent(
     streaming_on=False,
 )
 
+
 # Example task: Fetch $swarms data and provide insights
 def answer_swarms_query(query):
     # Fetch real-time data
@@ -178,8 +181,6 @@ def answer_swarms_query(query):
     )
     full_query = f"{query}\n\nReal-Time Data:\n{data_summary}"
     return swarms_agent.run(full_query)
-
-
 
 
 def clean_markdown(text: str) -> str:
@@ -226,8 +227,6 @@ def clean_markdown(text: str) -> str:
     # Join all parts back together
     result = "".join(cleaned_parts)
     return result
-
-
 
 
 def check_mention(update: Update) -> bool:
