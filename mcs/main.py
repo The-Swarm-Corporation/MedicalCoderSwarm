@@ -30,10 +30,17 @@ def patient_id_uu():
 
 
 class RAGAPI:
+    """
+    Class to interact with the RAG API.
+    """
+
     def __init__(
         self,
         base_url: str = None,
     ):
+        """
+        Initialize the RAG API with a base URL.
+        """
         self.base_url = base_url
 
     def query_rag(self, query: str):
@@ -348,18 +355,77 @@ lab_matcher = Agent(
     dynamic_temperature_enabled=True,
 )
 
+
+treatment_agent = Agent(
+    agent_name="Treatment-Agent",
+    system_prompt="""
+    You are a specialist in treatment options, responsible for recommending the most effective and cost-efficient treatments for patients, considering both traditional and modern medicine approaches.
+
+    Primary Responsibilities:
+    1. Provide treatment recommendations for various diagnoses
+    2. Offer multiple treatment methods, including traditional and modern medicine approaches
+    3. Rank treatment options based on effectiveness and estimated cost
+    4. Consider patient-specific factors, such as age, health status, and allergies
+    5. Provide detailed treatment plans, including dosages, frequencies, and duration
+
+    For each case, provide:
+
+    Treatment Recommendations:
+    - Multiple treatment options, including traditional and modern medicine approaches
+    - Ranking of treatment options based on effectiveness and estimated cost
+    - Consideration of patient-specific factors, such as age, health status, and allergies
+    
+    Treatment Details:
+    - Detailed treatment plans, including dosages, frequencies, and duration
+    - Information on potential side effects and interactions
+    - Monitoring and follow-up requirements
+    
+    Cost Analysis:
+    - Estimated cost of each treatment option
+    - Breakdown of costs, including medication, hospitalization, and other expenses
+    
+    Patient Education:
+    - Clear explanations of treatment options and their benefits
+    - Instructions for self-care and lifestyle modifications
+    - Addressing patient concerns and questions
+    
+    Output Format:
+    1. Treatment Options
+        - Ranked list of treatment options with effectiveness and cost analysis
+        - Detailed treatment plans
+    2. Patient Education
+        - Clear explanations of treatment options and their benefits
+        - Instructions for self-care and lifestyle modifications
+    3. Cost Analysis
+        - Estimated cost of each treatment option
+        - Breakdown of costs
+    4. Monitoring and Follow-up
+        - Requirements for monitoring and follow-up care
+        - Scheduling and frequency of follow-up appointments
+    
+    Always specify:
+    - Evidence-based information to support treatment recommendations
+    - Consideration of patient preferences and values
+    - Alternative treatment options for patients with specific needs or restrictions
+    """,
+    llm=model,
+    max_loops=1,
+    dynamic_temperature_enabled=True,
+)
+
 # Create agent list
 agents = [
     chief_medical_officer,
     # virologist,
-    internist,
+    # internist,
     medical_coder,
     synthesizer,
     # lab_matcher,
+    treatment_agent,
 ]
 
 # Define diagnostic flow
-flow = f"""{chief_medical_officer.agent_name} -> {internist.agent_name} -> {medical_coder.agent_name} -> {synthesizer.agent_name}"""
+flow = f"""{chief_medical_officer.agent_name} -> {medical_coder.agent_name} -> {synthesizer.agent_name} -> {treatment_agent.agent_name}"""
 
 
 class MedicalCoderSwarmInput(BaseModel):
@@ -385,6 +451,10 @@ class ManyMedicalCoderSwarmOutput(BaseModel):
 
 
 class MedicalCoderSwarm:
+    """
+    Class to represent a medical coding diagnosis swarm.
+    """
+
     def __init__(
         self,
         name: str = "Medical-coding-diagnosis-swarm",
