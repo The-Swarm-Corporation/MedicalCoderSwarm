@@ -42,6 +42,7 @@ RUN pip install cryptography
 RUN pip install uvicorn
 RUN pip install loguru
 RUN pip install transformers
+RUN pip install -U swarms
 
 # start the server
 CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8080", "--proxy-headers", "--log-level=debug"]
