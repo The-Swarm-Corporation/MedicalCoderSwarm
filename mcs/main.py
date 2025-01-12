@@ -436,12 +436,8 @@ treatment_agent = Agent(
 
 # Create agent list
 agents = [
-    # chief_medical_officer,
-    # virologist,
-    # internist,
     medical_coder,
     synthesizer,
-    # lab_matcher,
     treatment_agent,
 ]
 
