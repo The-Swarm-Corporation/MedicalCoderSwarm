@@ -1,17 +1,19 @@
-from typing import List, Dict, Any, Optional
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
 import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 from loguru import logger
+from pydantic import BaseModel
+from requests.adapters import HTTPAdapter
 from tenacity import (
     retry,
+    retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
-    retry_if_exception_type,
 )
+from urllib3.util.retry import Retry
+
 from mcs.main import patient_id_uu
-from pydantic import BaseModel
 
 
 class PatientCase(BaseModel):

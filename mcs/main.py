@@ -415,7 +415,7 @@ treatment_agent = Agent(
 
 # Create agent list
 agents = [
-    chief_medical_officer,
+    # chief_medical_officer,
     # virologist,
     # internist,
     medical_coder,
@@ -425,7 +425,7 @@ agents = [
 ]
 
 # Define diagnostic flow
-flow = f"""{chief_medical_officer.agent_name} -> {medical_coder.agent_name} -> {synthesizer.agent_name} -> {treatment_agent.agent_name}"""
+flow = f"""{medical_coder.agent_name} -> {synthesizer.agent_name} -> {treatment_agent.agent_name}"""
 
 
 class MedicalCoderSwarmInput(BaseModel):
