@@ -20,6 +20,6 @@ if __name__ == "__main__":
         patient_documentation="",
     )
 
-    print(swarm.run(task=patient_case))
+    swarm.run(task=patient_case)
 
     # print(json.dumps(swarm.to_dict()))
