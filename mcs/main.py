@@ -10,6 +10,7 @@ from swarm_models import GPT4VisionAPI, OpenAIChat
 from swarms import Agent, AgentRearrange
 from swarms.telemetry.capture_sys_data import log_agent_data
 
+
 from mcs.security import (
     KeyRotationPolicy,
     SecureDataHandler,
@@ -28,6 +29,11 @@ model = OpenAIChat(
 def patient_id_uu():
     return str(uuid.uuid4().hex)
 
+
+
+
+# class MCSFunctionCaller(BaseModel):
+    
 
 class RAGAPI:
     """
