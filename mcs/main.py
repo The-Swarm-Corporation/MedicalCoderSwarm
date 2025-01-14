@@ -10,7 +10,6 @@ from swarm_models import GPT4VisionAPI, OpenAIChat
 from swarms import Agent, AgentRearrange
 from swarms.telemetry.capture_sys_data import log_agent_data
 
-
 from mcs.security import (
     KeyRotationPolicy,
     SecureDataHandler,
@@ -29,11 +28,6 @@ model = OpenAIChat(
 def patient_id_uu():
     return str(uuid.uuid4().hex)
 
-
-
-
-# class MCSFunctionCaller(BaseModel):
-    
 
 class RAGAPI:
     """
@@ -145,7 +139,7 @@ internist = Agent(
 
 medical_coder = Agent(
     agent_name="Medical Coder",
-    system_prompt = """
+    system_prompt="""
     You are a highly experienced and certified medical coder with extensive knowledge of ICD-10 coding guidelines, clinical documentation standards, and compliance regulations. Your responsibility is to ensure precise, compliant, and well-documented coding for all clinical cases.
 
     ### Primary Responsibilities:
@@ -254,15 +248,12 @@ synthesizer = Agent(
     - **Maintain Accuracy**: Ensure all summaries are backed by provided data and include confidence levels for findings.
     - **Simplify Complex Data**: Translate medical jargon into clear and accessible language where appropriate.
 
-    ### Example Workflow:
-    1. Review the input data for critical findings.
-    2. Group findings into primary and secondary categories based on their importance.
-    3. Summarize key insights in hierarchical order, ensuring clarity and precision.
-
+    
     ### Output Style:
     - Clear and professional tone.
     - Consistent structure with easy-to-scan sections.
-    - Minimize redundancy while ensuring completeness.""",
+    - Minimize redundancy while ensuring completeness.
+    """,
     llm=model,
     max_loops=1,
     dynamic_temperature_enabled=True,
