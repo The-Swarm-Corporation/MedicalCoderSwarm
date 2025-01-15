@@ -36,7 +36,7 @@ jobs:
       run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
     - name: Build and push ecr
-      uses: docker/build-push-action@v6.10.0
+      uses: docker/build-push-action@v6.12.0
       with:
         push: true
         tags: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY || 'swarms/mcs'}}:dev
