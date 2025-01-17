@@ -5,3 +5,4 @@ cryptography
 python-dotenv
 pkg_resources
 setuptools
+swarms-tools

@@ -4,3 +4,4 @@ mcs
 cryptography
 uvicorn
 loguru
+swarms-tools

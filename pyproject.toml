@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "mcs"
-version = "0.0.9"
+version = "0.1.0"
 description = "Paper - Pytorch"
 license = "MIT"
 authors = ["Kye Gomez <kye@apac.ai>"]
@@ -27,6 +27,7 @@ swarms = "*"
 loguru = "*"
 swarms-models = "*"
 cryptography = "*"
+swarms-tools = "*"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.1.6"

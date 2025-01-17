@@ -1,14 +1,15 @@
 import json
 import os
+import time
 import uuid
 from datetime import datetime, timedelta
 from typing import Any, Callable, Dict, List, Optional
 
-from fastapi import requests
-from pydantic import BaseModel, Field
-from swarm_models import GPT4VisionAPI, OpenAIChat
-from swarms import Agent, AgentRearrange
+from pydantic import BaseModel
+from swarm_models import OpenAIChat
+from swarms import Agent
 from swarms.telemetry.capture_sys_data import log_agent_data
+from mcs.rag_api import ChromaQueryClient
 
 from mcs.security import (
     KeyRotationPolicy,
@@ -27,35 +28,6 @@ model = OpenAIChat(
 
 def patient_id_uu():
     return str(uuid.uuid4().hex)
-
-
-class RAGAPI:
-    """
-    Class to interact with the RAG API.
-    """
-
-    def __init__(
-        self,
-        base_url: str = None,
-    ):
-        """
-        Initialize the RAG API with a base URL.
-        """
-        self.base_url = base_url
-
-    def query_rag(self, query: str):
-        """
-        Query the RAG API with a given prompt.
-        """
-        try:
-            response = requests.post(
-                f"{self.base_url}/query",
-                json={"query": query},
-            )
-            return str(response.json())
-        except Exception as e:
-            print(f"An error occurred during the RAG query: {e}")
-            return None
 
 
 chief_medical_officer = Agent(
@@ -438,30 +410,19 @@ agents = [
     treatment_agent,
 ]
 
-# Define diagnostic flow
-flow = f"""{medical_coder.agent_name} -> {synthesizer.agent_name}, {treatment_agent.agent_name}"""
+
+class MCSAgentOutputs(BaseModel):
+    agent_id: Optional[str] = str(uuid.uuid4().hex)
+    agent_name: Optional[str] = None
+    agent_output: Optional[str] = None
+    timestamp: Optional[str] = time.strftime("%Y-%m-%d %H:%M:%S")
 
 
-class MedicalCoderSwarmInput(BaseModel):
-    mcs_id: Optional[str] = uuid.uuid4().hex
-    patient_id: Optional[str]
-    task: Optional[str]
-    img: Optional[str]
-    patient_docs: Optional[str]
-    summarization: Optional[bool]
-
-
-class MedicalCoderSwarmOutput(BaseModel):
-    input: Optional[MedicalCoderSwarmInput]
-    run_id: Optional[str] = Field(default=uuid.uuid4().hex)
-    patient_id: Optional[str]
-    agent_outputs: Optional[str]
-    summarization: Optional[str]
-
-
-class ManyMedicalCoderSwarmOutput(BaseModel):
-    runs_id: Optional[str] = uuid.uuid4().hex
-    runs: Optional[List[MedicalCoderSwarmOutput]]
+class MCSOutput(BaseModel):
+    run_id: Optional[str] = str(uuid.uuid4().hex)
+    agent_outputs: Optional[List[MCSAgentOutputs]] = None
+    summary: Optional[str]
+    timestamp: Optional[str] = time.strftime("%Y-%m-%d %H:%M:%S")
 
 
 class MedicalCoderSwarm:
@@ -474,66 +435,40 @@ class MedicalCoderSwarm:
         name: str = "Medical-coding-diagnosis-swarm",
         description: str = "Comprehensive medical diagnosis and coding system",
         agents: list = agents,
-        flow: str = flow,
         patient_id: str = "001",
         max_loops: int = 1,
-        output_type: str = "all",
         output_folder_path: str = "reports",
         patient_documentation: str = None,
         agent_outputs: list = any,
-        rag_enabled: bool = False,
-        rag_url: str = None,
         user_name: str = "User",
         key_storage_path: str = None,
         summarization: bool = False,
-        vision_enabled: bool = False,
+        rag_on: bool = False,
+        rag_url: str = None,
+        rag_api_key: str = None,
         *args,
         **kwargs,
     ):
         self.name = name
         self.description = description
         self.agents = agents
-        self.flow = flow
         self.patient_id = patient_id
         self.max_loops = max_loops
-        self.output_type = output_type
         self.output_folder_path = output_folder_path
         self.patient_documentation = patient_documentation
         self.agent_outputs = agent_outputs
-        self.rag_enabled = rag_enabled
-        self.rag_url = rag_url
         self.user_name = user_name
         self.key_storage_path = key_storage_path
         self.summarization = summarization
-        self.vision_enabled = vision_enabled
+        self.rag_on = rag_on
+        self.rag_url = rag_url
+        self.rag_api_key = rag_api_key
         self.agent_outputs = []
         self.patient_id = patient_id_uu()
-
-        if self.vision_enabled:
-            self.change_agent_llm()
-
-        self.diagnosis_system = AgentRearrange(
-            name="Medical-coding-diagnosis-swarm",
-            description="Comprehensive medical diagnosis and coding system",
-            agents=agents,
-            flow=flow,
-            max_loops=max_loops,
-            output_type=output_type,
-            *args,
-            **kwargs,
-        )
-
-        if self.rag_enabled:
-            self.diagnosis_system.memory_system = RAGAPI(
-                base_url=rag_url
-            )
 
         self.output_file_path = (
             f"medical_diagnosis_report_{patient_id}.md",
         )
-
-        # Change the user name for all agents in the swarm
-        self.change_agent_user_name(user_name)
 
         # Initialize with production configuration
         self.secure_handler = SecureDataHandler(
@@ -546,27 +481,15 @@ class MedicalCoderSwarm:
             auto_rotate=True,
         )
 
-    def change_agent_llm(self):
-        """
-        Change the language model for all agents in the swarm.
-        """
-        model = GPT4VisionAPI(
-            openai_api_key=os.getenv("OPENAI_API_KEY"),
-            model_name="gpt-4o",
-            max_tokens=4000,
+        # Output schema
+        self.output_schema = MCSOutput(agent_outputs=[], summary="")
+
+    def rag_query(self, query: str):
+        client = ChromaQueryClient(
+            api_key=self.rag_api_key, base_url=self.rag_url
         )
 
-        for agent in self.agents:
-            agent.llm = model
-
-    def change_agent_user_name(self, user_name: str):
-        """
-        Change the user name for all agents in the swarm.
-        """
-        for agent in self.agents:
-            self.user_name = user_name
-
-        return agents
+        return client.query(query)
 
     def _run(
         self, task: str = None, img: str = None, *args, **kwargs
@@ -577,19 +500,54 @@ class MedicalCoderSwarm:
         try:
             log_agent_data(self.to_dict())
 
-            case_info = f"Patient Information: {self.patient_id} \n Timestamp: {datetime.now()} \n Patient Documentation {self.patient_documentation} \n Task: {task}"
+            if self.rag_on is True:
+                db_data = self.rag_query(task)
 
-            output = self.diagnosis_system.run(
-                task=case_info, img=img, *args, **kwargs
+            case_info = f"Patient Information: {self.patient_id} \n Timestamp: {datetime.now()} \n Patient Documentation {self.patient_documentation} \n Task: {task} "
+
+            if self.rag_on:
+                case_info = f"{db_data}{case_info}"
+
+            medical_coder_output = medical_coder.run(case_info)
+
+            # Append output to schema
+            self.output_schema.agent_outputs.append(
+                MCSAgentOutputs(
+                    agent_name=medical_coder.agent_name,
+                    agent_output=medical_coder_output,
+                )
+            )
+
+            # Next agent
+            synthesizer_output = synthesizer.run(
+                f"From {medical_coder.agent_name} {medical_coder_output}"
+            )
+            self.output_schema.agent_outputs.append(
+                MCSAgentOutputs(
+                    agent_name=synthesizer.agent_name,
+                    agent_output=synthesizer_output,
+                )
+            )
+
+            # Next agent
+            treatment_agent_output = treatment_agent.run(
+                f"From {synthesizer.agent_name} {synthesizer_output}"
+            )
+            self.output_schema.agent_outputs.append(
+                MCSAgentOutputs(
+                    agent_name=treatment_agent.agent_name,
+                    agent_output=treatment_agent_output,
+                )
             )
 
             if self.summarization is True:
-                output = summarizer_agent.run(output)
+                output = summarizer_agent.run(treatment_agent_output)
+                self.output_schema.summary = output
 
-            self.agent_outputs.append(output)
             log_agent_data(self.to_dict())
 
-            return output
+            return self.output_schema
+
         except Exception as e:
             log_agent_data(self.to_dict())
             print(
@@ -598,13 +556,7 @@ class MedicalCoderSwarm:
 
     def run(self, task: str = None, img: str = None, *args, **kwargs):
         try:
-
-            if self.secure_handler:
-                return self.secure_run(
-                    task=task, img=img, *args, **kwargs
-                )
-            else:
-                return self._run(task, img, *args, **kwargs)
+            return self._run(task, img, *args, **kwargs)
         except Exception as e:
             log_agent_data(self.to_dict())
             print(
