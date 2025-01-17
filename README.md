@@ -264,78 +264,6 @@ To build and run the Docker container for the Medical Coder Swarm, follow these 
   docker run --rm mcs
   ```
 
-## Docker Compose
-
-```bash
-docker-compose up
-```
-
-### To stop the services, run:
-```bash
-docker-compose down
-```
-
-
-# Full Diagram
-
-```
-graph TB
-    subgraph External["External Systems"]
-        API[("FastAPI Endpoints")]
-        RAG["RAG System"]
-        SEC["Security Layer"]
-    end
-
-    subgraph Core["Core MCS"]
-        MS["MedicalCoderSwarm"]
-        AG["AgentRearrange"]
-        
-        subgraph Agents["Agent Network"]
-            CMO["Chief Medical Officer"]
-            VIR["Virologist"]
-            INT["Internist"]
-            MC["Medical Coder"]
-            SYN["Synthesizer"]
-            SUM["Summarizer"]
-        end
-        
-        subgraph Security["Security Components"]
-            SDH["SecureDataHandler"]
-            KRP["KeyRotationPolicy"]
-        end
-        
-        subgraph IO["I/O Management"]
-            LOG["Logger"]
-            FS["File System"]
-        end
-    end
-
-    %% Connections
-    API --> MS
-    MS --> AG
-    AG --> Agents
-    RAG --> MS
-    MS --> SDH
-    SDH --> KRP
-    MS --> LOG
-    MS --> FS
-    
-    %% Agent Flow
-    CMO --> VIR
-    VIR --> INT
-    INT --> MC
-    MC --> SYN
-    SYN --> SUM
-    
-    class API,RAG,SEC external
-    class MS,AG core
-    class SDH,KRP security
-    class LOG,FS io
-
-
-```
-
-
 
 ## Lab Range Analysis
 
@@ -360,7 +288,6 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 ## Acknowledgments
 
 - Built with the Swarms framework
-- Utilizes GPT-4 for advanced medical reasoning
 - ICD-10 coding standards compliance
 
 ## Contact
