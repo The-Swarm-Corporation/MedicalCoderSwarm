@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 from typing import Any, Callable, Dict, List, Optional
 
 from pydantic import BaseModel
-from swarm_models import OpenAIChat
 from swarms import Agent
 from swarms.telemetry.capture_sys_data import log_agent_data
 from mcs.rag_api import ChromaQueryClient
@@ -15,14 +14,6 @@ from mcs.security import (
     KeyRotationPolicy,
     SecureDataHandler,
     secure_data,
-)
-
-model_name = "gpt-4o"
-
-model = OpenAIChat(
-    model_name=model_name,
-    max_tokens=3000,
-    openai_api_key=os.getenv("OPENAI_API_KEY"),
 )
 
 
