@@ -544,7 +544,7 @@ class MedicalCoderSwarm:
 
             log_agent_data(self.to_dict())
 
-            return self.output_schema
+            return self.output_schema.model_dump_json(indent=4)
 
         except Exception as e:
             log_agent_data(self.to_dict())

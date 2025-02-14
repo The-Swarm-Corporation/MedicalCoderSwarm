@@ -71,4 +71,4 @@ if __name__ == "__main__":
     output = swarm.run(task=patient_case)
 
     # Print the system's state after processing
-    print(output.model_dump_json(indent=4))
+    print(output)
