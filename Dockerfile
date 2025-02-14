@@ -41,7 +41,6 @@ RUN pip install mcs
 RUN pip install cryptography
 RUN pip install uvicorn
 RUN pip install loguru
-RUN pip install transformers
 RUN pip install -U swarms
 
 # start the server
