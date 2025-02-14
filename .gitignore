@@ -12,6 +12,7 @@ agent_workspace
 .Python
 build/
 develop-eggs/
+.secure_keys
 dist/
 downloads/
 eggs/

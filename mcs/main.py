@@ -52,7 +52,7 @@ chief_medical_officer = Agent(
     
     
     """,
-    llm=model,
+    model_name="groq/deepseek-r1-distill-llama-70b",
     max_loops=1,
     dynamic_temperature_enabled=True,
 )
@@ -77,7 +77,7 @@ chief_medical_officer = Agent(
 #         * Secondary condition codes
 
 #     Document all findings using proper medical coding standards and include rationale for code selection.""",
-#     llm=model,
+#     model_name="groq/deepseek-r1-distill-llama-70b",
 #     max_loops=1,
 #     dynamic_temperature_enabled=True,
 # )
@@ -104,7 +104,7 @@ internist = Agent(
     - Include hierarchical condition category (HCC) codes where applicable
     
     Document supporting evidence for each code selected.""",
-    llm=model,
+    model_name="groq/deepseek-r1-distill-llama-70b",
     max_loops=1,
     dynamic_temperature_enabled=True,
 )
@@ -157,7 +157,7 @@ medical_coder = Agent(
     - For ambiguous cases, provide a brief note with reasoning and flag for clarification.
     - Ensure the output format is clean, consistent, and ready for professional use.
     """,
-    llm=model,
+    model_name="groq/deepseek-r1-distill-llama-70b",
     max_loops=1,
     dynamic_temperature_enabled=True,
 )
@@ -186,7 +186,7 @@ synthesizer = Agent(
         - Documentation improvements needed
     
     Include confidence levels and evidence quality for all diagnoses and codes.""",
-    llm=model,
+    model_name="groq/deepseek-r1-distill-llama-70b",
     max_loops=1,
     dynamic_temperature_enabled=True,
 )
@@ -226,7 +226,7 @@ synthesizer = Agent(
     - Consistent structure with easy-to-scan sections.
     - Minimize redundancy while ensuring completeness.
     """,
-    llm=model,
+    model_name="groq/deepseek-r1-distill-llama-70b",
     max_loops=1,
     dynamic_temperature_enabled=True,
 )
@@ -263,7 +263,7 @@ summarizer_agent = Agent(
     - Clear, concise, and easy to understand.
     - Suitable for social media or quick report overviews.
     """,
-    llm=model,
+    model_name="groq/deepseek-r1-distill-llama-70b",
     max_loops=1,
     dynamic_temperature_enabled=False,  # Keeps summaries consistently concise
 )
@@ -340,7 +340,7 @@ lab_matcher = Agent(
     - Cost considerations
     - Alternative test options
     """,
-    llm=model,
+    model_name="groq/deepseek-r1-distill-llama-70b",
     max_loops=1,
     dynamic_temperature_enabled=True,
 )
@@ -398,9 +398,10 @@ treatment_agent = Agent(
     - Consideration of patient preferences and values
     - Alternative treatment options for patients with specific needs or restrictions
     """,
-    llm=model,
+    model_name="groq/deepseek-r1-distill-llama-70b",
     max_loops=1,
     dynamic_temperature_enabled=True,
+    do_not_use_cluster_ops=True,
 )
 
 # Create agent list
@@ -420,6 +421,7 @@ class MCSAgentOutputs(BaseModel):
 
 class MCSOutput(BaseModel):
     run_id: Optional[str] = str(uuid.uuid4().hex)
+    patient_id: Optional[str]
     agent_outputs: Optional[List[MCSAgentOutputs]] = None
     summary: Optional[str]
     timestamp: Optional[str] = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -482,7 +484,9 @@ class MedicalCoderSwarm:
         )
 
         # Output schema
-        self.output_schema = MCSOutput(agent_outputs=[], summary="")
+        self.output_schema = MCSOutput(
+            patient_id=self.patient_id, agent_outputs=[], summary=""
+        )
 
     def rag_query(self, query: str):
         client = ChromaQueryClient(
