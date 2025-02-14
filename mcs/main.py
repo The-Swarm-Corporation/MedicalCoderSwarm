@@ -7,7 +7,6 @@ from typing import Any, Callable, Dict, List, Optional
 
 from pydantic import BaseModel
 from swarms import Agent
-from swarms.telemetry.main import log_agent_data
 from mcs.rag_api import ChromaQueryClient
 
 from mcs.security import (
@@ -19,6 +18,10 @@ from mcs.security import (
 
 def patient_id_uu():
     return str(uuid.uuid4().hex)
+
+
+def log_agent_data(data: Dict[str, Any]):
+    pass
 
 
 chief_medical_officer = Agent(
