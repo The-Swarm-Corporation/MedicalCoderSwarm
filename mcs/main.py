@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 from pydantic import BaseModel
 from swarms import Agent
-from swarms.telemetry.capture_sys_data import log_agent_data
+from swarms.telemetry.main import log_agent_data
 from mcs.rag_api import ChromaQueryClient
 
 from mcs.security import (
