@@ -32,16 +32,5 @@ RUN chmod +x bootup.sh
 # Expose the application port
 EXPOSE 8080
 
-# Pip install uvicorn
-RUN pip install setuptools
-RUN pip install uvicorn
-RUN pip install fastapi
-RUN pip install pydantic
-RUN pip install mcs
-RUN pip install cryptography
-RUN pip install uvicorn
-RUN pip install loguru
-RUN pip install -U swarms
-
 # start the server
 CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8080", "--proxy-headers", "--log-level=debug"]
