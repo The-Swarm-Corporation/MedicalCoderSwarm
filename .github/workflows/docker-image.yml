@@ -16,7 +16,7 @@ jobs:
       with:
         username: ${{ vars.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
